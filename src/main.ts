@@ -1,3 +1,4 @@
+import { Empire } from "Empire";
 import { ErrorMapper } from "utils/ErrorMapper";
 
 declare global {
@@ -13,12 +14,14 @@ declare global {
   interface Memory {
     uuid: number;
     log: any;
+    colonies: any;
   }
 
   interface CreepMemory {
     role: string;
     room: string;
-    working: boolean;
+    task: string;
+    colonyName: string;
   }
 
   // Syntax for adding proprties to `global` (ex "global.log")
@@ -27,17 +30,41 @@ declare global {
       log: any;
     }
   }
+
+  var empire: IEmpire;
 }
+
+global.empire = new Empire();
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
 export const loop = ErrorMapper.wrapLoop(() => {
   console.log(`Current game tick is ${Game.time}`);
 
+  let empire = global.empire;
+
+  empire.init();
+
+  for (let colName in empire.colonies) {
+    empire.colonies[colName].init();
+  }
+
+  for (let colName in empire.colonies) {
+    empire.colonies[colName].run();
+  }
+
+  empire.run();
+
   // Automatically delete memory of missing creeps
   for (const name in Memory.creeps) {
     if (!(name in Game.creeps)) {
       delete Memory.creeps[name];
+    }
+  }
+
+  for (const name in Memory.flags) {
+    if (!(name in Game.flags)) {
+      delete Memory.flags[name];
     }
   }
 });
