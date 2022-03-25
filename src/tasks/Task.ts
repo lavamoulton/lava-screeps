@@ -1,3 +1,5 @@
+import { Traveler } from "../utils/Traveler";
+
 export abstract class Task implements ITask {
     type: string;
     private _creep: {
@@ -61,7 +63,8 @@ export abstract class Task implements ITask {
         if (!this.targetPos) {
             return -1;
         }
-        return this.creep.moveTo(this.targetPos?.x, this.targetPos?.y);
+        return Traveler.travelTo(this.creep, this.targetPos);
+        //return this.creep.moveTo(this.targetPos?.x, this.targetPos?.y);
     }
 
     step(): number | void {

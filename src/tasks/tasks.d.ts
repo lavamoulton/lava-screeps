@@ -4,7 +4,9 @@ type TaskTemplate = {
     targetID: Id<RoomObject>;
 }
 
-type targetType = ConstructionSite | Source | Structure;
+type targetType = Tombstone | ConstructionSite | Source | Structure;
+
+type withdrawType = StructureStorage | StructureContainer | StructureTerminal | StructureLink | Tombstone;
 
 interface ITask {
     type: string;

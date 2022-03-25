@@ -56,8 +56,8 @@ export class Colony implements IColony {
 
     init(): void {
         this.spawner = this._initSpawner();
-        this.manager = this._initColonyManager();
         this.mines = this._initMines();
+        this.manager = this._initColonyManager();
     }
 
     run(): void {

@@ -5,16 +5,21 @@ import { TaskHarvest } from "tasks/Harvest";
 import { TaskSupply } from "tasks/Supply";
 import { TaskUpgrade } from "tasks/Upgrade";
 import { TaskBuild } from "tasks/Build";
+import { TaskWithdraw } from "tasks/Withdraw";
+import { RoomPlanner } from "../planners/RoomPlanner";
+import { TaskRepair } from "tasks/Repair";
 
 export class ColonyManager extends Manager {
 
     private _creepPriorities: { [name: string]: number } | null;
     private _roleTemplates: { [name: string]: BodyPartConstant[] } | null;
+    private _roomPlanner: IRoomPlanner | null;
 
     constructor(colony: IColony) {
         super(colony);
         this._creepPriorities = null;
         this._roleTemplates = null;
+        this._roomPlanner = null;
     }
 
     init(): void {
@@ -25,6 +30,8 @@ export class ColonyManager extends Manager {
                 this.colony.creepsByRole[role] = [];
             }
         }
+        this._roomPlanner = new RoomPlanner(this.colony);
+        this._roomPlanner.init();
     }
 
     run(): void {
@@ -38,6 +45,7 @@ export class ColonyManager extends Manager {
         }
         this._queueCreeps();
         this._runCreeps();
+        this._roomPlanner?.run();
     }
 
     private _loadCreepPriorities(): { [name: string]: number } {
@@ -63,7 +71,7 @@ export class ColonyManager extends Manager {
     }
 
     private _queueCreeps(): void {
-        if (this.colony.creepsByRole['worker'].length < 4) {
+        if (this.colony.creepsByRole['worker'].length < 5) {
             this.colony.spawner?.queueCreep({
                 name: 'worker' + Game.time,
                 body: this._getCreepBody('builder'),
@@ -90,7 +98,7 @@ export class ColonyManager extends Manager {
                 });
             }
             let numConstructionSites = this.colony.room.find(FIND_CONSTRUCTION_SITES).length;
-            if (this.colony.creepsByRole['builder'].length < ((numConstructionSites / 10) + 1)) {
+            if (this.colony.creepsByRole['builder'].length < ((numConstructionSites / 5) + 1)) {
                 this.colony.spawner?.queueCreep({
                     name: 'builder' + Game.time,
                     body: this._getCreepBody('builder'),
@@ -128,7 +136,7 @@ export class ColonyManager extends Manager {
             if (!task) {
                 creep.memory.task = 'none';
             } else {
-                if (!task.isValidTarget() || !task.isValidTask()) {
+                if (!task.isValidTarget() || !task.isValidTask() && creep.memory.role !== 'miner') {
                     task.remove();
                 } else {
                     if (creep.memory.role === 'miner') {
@@ -160,6 +168,13 @@ export class ColonyManager extends Manager {
             return task;
         } else {
             if (creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
+                const openMineOutputs = _.filter(this.colony.mines!, (mine) => {
+                    return (mine.output && mine.remainingOutput > creep.store.getFreeCapacity(RESOURCE_ENERGY))});
+                if (openMineOutputs.length > 0) {
+                    const task = new TaskWithdraw(openMineOutputs[0].output!, creep);
+                    creep.memory.task = taskUtils.taskToString(task, openMineOutputs[0].output!.id);
+                    return task;
+                }
                 const source = this.colony.room.find(FIND_SOURCES_ACTIVE)[0];
                 const task = new TaskHarvest(source, creep);
                 creep.memory.task = taskUtils.taskToString(task, source.id);
@@ -167,14 +182,32 @@ export class ColonyManager extends Manager {
             }
             if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
                 if (creep.memory.role === 'builder') {
+                    const repairSite = this.colony.room.find(FIND_STRUCTURES, { filter: (s) => {
+                        s.hits < s.hitsMax;
+                    }})[0];
+                    if (repairSite) {
+                        const task = new TaskRepair(repairSite, creep);
+                        creep.memory.task = taskUtils.taskToString(task, repairSite.id);
+                        return task;
+                    }
                     const constructionSite = this.colony.room.find(FIND_CONSTRUCTION_SITES)[0];
-                    const task = new TaskBuild(constructionSite, creep);
-                    creep.memory.task = taskUtils.taskToString(task, constructionSite.id);
-                    return task;
+                    if (constructionSite) {
+                        const task = new TaskBuild(constructionSite, creep);
+                        creep.memory.task = taskUtils.taskToString(task, constructionSite.id);
+                        return task;
+                    }
                 }
                 if (this.colony.spawner!.energyNeeded < 271) {
                     const task = new TaskSupply(this.colony.spawner!.spawns[0], creep);
                     creep.memory.task = taskUtils.taskToString(task, this.colony.spawner!.spawns[0].id);
+                    return task;
+                }
+                const repairSite = this.colony.room.find(FIND_STRUCTURES, { filter: (s) => {
+                    s.hits < s.hitsMax;
+                }})[0];
+                if (repairSite) {
+                    const task = new TaskRepair(repairSite, creep);
+                    creep.memory.task = taskUtils.taskToString(task, repairSite.id);
                     return task;
                 }
                 const task = new TaskUpgrade(this.colony.controller, creep);

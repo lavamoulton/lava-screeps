@@ -15,6 +15,7 @@ declare global {
     uuid: number;
     log: any;
     colonies: any;
+    empire: any;
   }
 
   interface CreepMemory {
@@ -22,6 +23,8 @@ declare global {
     room: string;
     task: string;
     colonyName: string;
+    _trav: any;
+    _travel: any;
   }
 
   // Syntax for adding proprties to `global` (ex "global.log")

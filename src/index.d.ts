@@ -16,3 +16,7 @@ interface IColony {
     init(): void;
     run(): void;
 }
+
+interface RoomMemory {
+    avoid: any;
+}

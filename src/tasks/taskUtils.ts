@@ -2,6 +2,8 @@ import { creepTemplates } from "templates/creepTemplates";
 import { TaskHarvest } from "./Harvest";
 import { TaskSupply } from "./Supply";
 import { TaskUpgrade } from "./Upgrade";
+import { TaskBuild } from "./Build";
+import { TaskWithdraw } from "./Withdraw";
 
 const split = '.';
 
@@ -39,6 +41,10 @@ function createTask(taskTemplate: TaskTemplate): ITask | null {
                 return new TaskSupply(target as StructureSpawn | StructureExtension, taskTemplate.creep);
             case 'upgrade':
                 return new TaskUpgrade(target as StructureController, taskTemplate.creep);
+            case 'build':
+                return new TaskBuild(target as ConstructionSite, taskTemplate.creep);
+            case 'withdraw':
+                return new TaskWithdraw(target as withdrawType, taskTemplate.creep);
             default:
                 return null;
         }
