@@ -1,7 +1,5 @@
 import { Task } from './Task';
 
-type withdrawType = StructureStorage | StructureContainer | StructureTerminal | StructureLink | Tombstone;
-
 export class TaskWithdraw extends Task {
 
     constructor(target: withdrawType, creep: Creep) {

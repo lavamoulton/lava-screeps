@@ -8,6 +8,7 @@ import { TaskBuild } from "tasks/Build";
 import { TaskWithdraw } from "tasks/Withdraw";
 import { RoomPlanner } from "../planners/RoomPlanner";
 import { TaskRepair } from "tasks/Repair";
+import { TaskPickup } from "tasks/Pickup";
 
 export class ColonyManager extends Manager {
 
@@ -30,8 +31,10 @@ export class ColonyManager extends Manager {
                 this.colony.creepsByRole[role] = [];
             }
         }
-        this._roomPlanner = new RoomPlanner(this.colony);
-        this._roomPlanner.init();
+        if (Game.time % 60) {
+            this._roomPlanner = new RoomPlanner(this.colony);
+            this._roomPlanner.init();
+        }
     }
 
     run(): void {
@@ -168,6 +171,13 @@ export class ColonyManager extends Manager {
             return task;
         } else {
             if (creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
+                const droppedResources = this.colony.room.find(FIND_DROPPED_RESOURCES);
+                if (droppedResources.length > 0) {
+                    const resource = droppedResources[0];
+                    const task = new TaskPickup(resource, creep);
+                    creep.memory.task = taskUtils.taskToString(task, resource.id);
+                    return task;
+                }
                 const openMineOutputs = _.filter(this.colony.mines!, (mine) => {
                     return (mine.output && mine.remainingOutput > creep.store.getFreeCapacity(RESOURCE_ENERGY))});
                 if (openMineOutputs.length > 0) {

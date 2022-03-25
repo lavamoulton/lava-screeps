@@ -56,6 +56,9 @@ export class Mine extends Structure implements IMine {
                     if (this.output.hits < this.output.hitsMax) {
                         miner.repair(this.output);
                     }
+                    if (miner.pos !== this.output.pos) {
+                        miner.moveTo(this.output);
+                    }
                 }
             }
             miner.harvest(this.source);

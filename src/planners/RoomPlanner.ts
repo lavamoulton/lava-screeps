@@ -54,8 +54,8 @@ export class RoomPlanner implements IRoomPlanner {
                     console.log(`mineRoad${mine.source.id}`);
                     if (!colMemory[`mineRoad${mine.source.id}`]) {
                         colMemory[`mineRoad${mine.source.id}`] = [];
+                        colMemory[`mineRoad${mine.source.id}`] = this._getMineRoad(mine);
                     }
-                    colMemory[`mineRoad${mine.source.id}`] = this._getMineRoad(mine);
                 }
             })
         }

@@ -4,6 +4,7 @@ import { TaskSupply } from "./Supply";
 import { TaskUpgrade } from "./Upgrade";
 import { TaskBuild } from "./Build";
 import { TaskWithdraw } from "./Withdraw";
+import { TaskPickup } from "./Pickup";
 
 const split = '.';
 
@@ -45,6 +46,8 @@ function createTask(taskTemplate: TaskTemplate): ITask | null {
                 return new TaskBuild(target as ConstructionSite, taskTemplate.creep);
             case 'withdraw':
                 return new TaskWithdraw(target as withdrawType, taskTemplate.creep);
+            case 'pickup':
+                return new TaskPickup(target as Resource, taskTemplate.creep);
             default:
                 return null;
         }

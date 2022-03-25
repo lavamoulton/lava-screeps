@@ -4,7 +4,7 @@ type TaskTemplate = {
     targetID: Id<RoomObject>;
 }
 
-type targetType = Tombstone | ConstructionSite | Source | Structure;
+type targetType = Tombstone | ConstructionSite | Source | Structure | Resource;
 
 type withdrawType = StructureStorage | StructureContainer | StructureTerminal | StructureLink | Tombstone;
 
