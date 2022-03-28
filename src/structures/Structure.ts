@@ -1,3 +1,6 @@
+import { profile } from "../Profiler";
+
+@profile
 export abstract class Structure implements IStructure {
     room: Room;
     pos: RoomPosition;

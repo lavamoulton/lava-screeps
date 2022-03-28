@@ -1,6 +1,8 @@
+import { profile } from "../Profiler";
 import { Traveler } from "utils/Traveler";
 import { bunker } from "../templates/roomBunker";
 
+@profile
 export class RoomPlanner implements IRoomPlanner {
     colony: IColony;
 
@@ -51,7 +53,6 @@ export class RoomPlanner implements IRoomPlanner {
         if (this.colony.mines) {
             _.forEach(this.colony.mines, (mine) => {
                 if (mine.output) {
-                    console.log(`mineRoad${mine.source.id}`);
                     if (!colMemory[`mineRoad${mine.source.id}`]) {
                         colMemory[`mineRoad${mine.source.id}`] = [];
                         colMemory[`mineRoad${mine.source.id}`] = this._getMineRoad(mine);

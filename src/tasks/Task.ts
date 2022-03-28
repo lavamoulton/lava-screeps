@@ -1,5 +1,7 @@
+import { profile } from "../Profiler";
 import { Traveler } from "../utils/Traveler";
 
+@profile
 export abstract class Task implements ITask {
     type: string;
     private _creep: {

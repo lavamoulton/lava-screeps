@@ -1,5 +1,7 @@
+import { profile } from "../Profiler";
 import { Task } from './Task';
 
+@profile
 export class TaskRepair extends Task {
     constructor(target: Structure, creep: Creep) {
         super('repair', target, creep);
@@ -15,6 +17,9 @@ export class TaskRepair extends Task {
             return false;
         }
         const target = this.target as Structure;
+        if (target.hitsMax > 20000) {
+            return target.hits < 20000;
+        }
         return target.hits < target.hitsMax;
     }
 

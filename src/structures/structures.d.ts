@@ -13,6 +13,7 @@ interface ISpawner extends IStructure {
     availableSpawns: StructureSpawn[];
     extensions: StructureExtension[];
     energyNeeded: number;
+    maxEnergy: number;
     queueCreep(creepTemplate: creepTemplate, priority?: number): void;
 }
 

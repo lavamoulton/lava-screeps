@@ -1,5 +1,7 @@
+import { profile } from "../Profiler";
 import { Task } from './Task';
 
+@profile
 export class TaskUpgrade extends Task {
     constructor(target: StructureController, creep: Creep) {
         super('upgrade', target, creep);

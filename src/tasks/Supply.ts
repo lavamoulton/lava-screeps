@@ -1,7 +1,9 @@
+import { profile } from "../Profiler";
 import { Task } from './Task';
 
+@profile
 export class TaskSupply extends Task {
-    constructor(target: StructureSpawn | StructureExtension, creep: Creep) {
+    constructor(target: StructureSpawn | StructureExtension | StructureTower, creep: Creep) {
         super('supply', target, creep);
     }
 
@@ -16,12 +18,12 @@ export class TaskSupply extends Task {
         if (!this.target) {
             return false;
         }
-        const target = this.target as StructureSpawn | StructureExtension;
-        return target.store.getFreeCapacity(RESOURCE_ENERGY) != 0;
+        const target = this.target as StructureSpawn | StructureExtension | StructureTower;
+        return target.store.getFreeCapacity(RESOURCE_ENERGY) !== 0;
     }
 
     work() {
-        const target = this.target as StructureSpawn | StructureExtension;
+        const target = this.target as StructureSpawn | StructureExtension | StructureTower;
         return this.creep.transfer(target, RESOURCE_ENERGY);
     }
 }

@@ -1,5 +1,7 @@
+import { profile } from "../Profiler";
 import { Structure } from './Structure';
 
+@profile
 export class Mine extends Structure implements IMine {
     memory: any;
     source: Source;

@@ -1,5 +1,7 @@
+import { profile } from "./Profiler";
 import { Colony } from "./Colony";
 
+@profile
 export class Empire implements IEmpire {
     colonies: { [colName: string]: IColony };
 

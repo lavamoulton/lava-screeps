@@ -1,5 +1,6 @@
 import { Empire } from "Empire";
 import { ErrorMapper } from "utils/ErrorMapper";
+import * as Profiler from "./Profiler";
 
 declare global {
   /*
@@ -35,7 +36,10 @@ declare global {
   }
 
   var empire: IEmpire;
+  var Profiler: Profiler;
 }
+
+global.Profiler = Profiler.init();
 
 global.empire = new Empire();
 
@@ -69,5 +73,9 @@ export const loop = ErrorMapper.wrapLoop(() => {
     if (!(name in Game.flags)) {
       delete Memory.flags[name];
     }
+  }
+
+  if (Game.cpu.bucket > 9999) {
+    Game.cpu.generatePixel();
   }
 });

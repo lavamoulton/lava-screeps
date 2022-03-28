@@ -1,7 +1,9 @@
+import { profile } from "./Profiler";
 import { ColonyManager } from './managers/ColonyManager';
 import { Spawner } from './structures/Spawner';
 import { Mine } from 'structures/Mine';
 
+@profile
 export class Colony implements IColony {
     name: string;
     room: Room;
@@ -10,7 +12,8 @@ export class Colony implements IColony {
     creepsByRole: { [roleName: string]: Creep[] };
     spawner: ISpawner | null;
     mines: { [sourceID: Id<Source>]: IMine } | null;
-    manager: IManager | null;
+    towers: StructureTower[] | null;
+    manager: IColonyManager | null;
 
     constructor(name: string, room: Room) {
         if (!Memory.colonies[name]) {
@@ -23,6 +26,7 @@ export class Colony implements IColony {
         this.creepsByRole = {};
         this.spawner = null;
         this.mines = null;
+        this.towers = null;
         this.manager = null;
     }
 
@@ -57,6 +61,9 @@ export class Colony implements IColony {
     init(): void {
         this.spawner = this._initSpawner();
         this.mines = this._initMines();
+        this.towers = this.room.find(FIND_MY_STRUCTURES, { filter: (s) =>
+            (s.structureType === STRUCTURE_TOWER)
+        });
         this.manager = this._initColonyManager();
     }
 

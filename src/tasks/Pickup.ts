@@ -1,5 +1,7 @@
+import { profile } from "../Profiler";
 import { Task } from './Task';
 
+@profile
 export class TaskPickup extends Task {
 
     constructor(target: Resource, creep: Creep) {

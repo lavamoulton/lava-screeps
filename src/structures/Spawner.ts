@@ -1,5 +1,7 @@
+import { profile } from "../Profiler";
 import { Structure } from './Structure';
 
+@profile
 export class Spawner extends Structure implements ISpawner {
     memory: any;
     spawns: StructureSpawn[];
@@ -24,13 +26,19 @@ export class Spawner extends Structure implements ISpawner {
         for (let spawn in this.spawns) {
             result += this.spawns[spawn].store.getFreeCapacity(RESOURCE_ENERGY);
         }
-        for (let extension in this.extensions) {
+        /*for (let extension in this.extensions) {
             result += this.extensions[extension].store.getFreeCapacity(RESOURCE_ENERGY);
-        }
+        }*/
         return result;
     }
 
+    get maxEnergy(): number {
+        //return this.spawns.length*300;
+        return (this.spawns.length*300) + (this.extensions.length*50);
+    }
+
     queueCreep(creepTemplate: creepTemplate, priority?: number): void {
+        console.log(`Spawning creep: ${creepTemplate.body}`);
         if (priority === undefined) {
             priority = 1000;
         }

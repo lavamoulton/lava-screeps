@@ -1,5 +1,7 @@
+import { profile } from "../Profiler";
 import { Task } from './Task';
 
+@profile
 export class TaskWithdraw extends Task {
 
     constructor(target: withdrawType, creep: Creep) {

@@ -1,3 +1,6 @@
+import { profile } from "../Profiler";
+
+@profile
 export abstract class Manager implements IManager {
     colony: IColony;
 

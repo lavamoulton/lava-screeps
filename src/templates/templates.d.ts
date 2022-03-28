@@ -3,3 +3,9 @@ interface creepTemplate {
     name: string;
     memory: any;
 }
+
+type roleTemplate = {
+    'prefix': BodyPartConstant[],
+    'body': BodyPartConstant[],
+    'suffix': BodyPartConstant[],
+}

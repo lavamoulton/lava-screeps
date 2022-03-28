@@ -12,7 +12,9 @@ interface IColony {
     creeps: Creep[];
     creepsByRole: { [roleName: string]: Creep[] };
     spawner: ISpawner | null;
+    towers: StructureTower[] | null;
     mines: { [sourceID: Id<Source>]: IMine } | null;
+    manager: IColonyManager | null;
     init(): void;
     run(): void;
 }

@@ -1,5 +1,7 @@
+import { profile } from "../Profiler";
 import { Task } from './Task';
 
+@profile
 export class TaskHarvest extends Task {
     constructor(target: Source, creep: Creep) {
         super('harvest', target, creep);

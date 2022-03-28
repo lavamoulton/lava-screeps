@@ -1,16 +1,17 @@
-import { creepTemplates } from "templates/creepTemplates";
 import { TaskHarvest } from "./Harvest";
 import { TaskSupply } from "./Supply";
 import { TaskUpgrade } from "./Upgrade";
 import { TaskBuild } from "./Build";
 import { TaskWithdraw } from "./Withdraw";
 import { TaskPickup } from "./Pickup";
+import { TaskRepair } from "./Repair";
 
 const split = '.';
 
 function taskTemplateToString(taskTemplate: TaskTemplate): string {
     return `${taskTemplate.type}${split}${taskTemplate.creep.name}${split}${taskTemplate.targetID}`;
 }
+
 
 function taskStringToTemplate(taskString: string): TaskTemplate {
     const splitString = taskString.split(split);
@@ -39,7 +40,7 @@ function createTask(taskTemplate: TaskTemplate): ITask | null {
             case 'harvest':
                 return new TaskHarvest(target as Source, taskTemplate.creep);
             case 'supply':
-                return new TaskSupply(target as StructureSpawn | StructureExtension, taskTemplate.creep);
+                return new TaskSupply(target as StructureSpawn | StructureExtension | StructureTower, taskTemplate.creep);
             case 'upgrade':
                 return new TaskUpgrade(target as StructureController, taskTemplate.creep);
             case 'build':
@@ -48,6 +49,8 @@ function createTask(taskTemplate: TaskTemplate): ITask | null {
                 return new TaskWithdraw(target as withdrawType, taskTemplate.creep);
             case 'pickup':
                 return new TaskPickup(target as Resource, taskTemplate.creep);
+            case 'repair':
+                return new TaskRepair(target as Structure, taskTemplate.creep);
             default:
                 return null;
         }
