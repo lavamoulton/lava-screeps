@@ -3,6 +3,7 @@ const CREEP_PRIORITIES: { [name: string]: number } = {
     'worker': 5,
     'upgrader': 6,
     'builder': 7,
+    'scout': 9,
 };
 
 const ROLE_TEMPLATES: { [name: string]: BodyPartConstant[] } = {
@@ -29,10 +30,15 @@ const ROLE_BODY_TEMPLATES: { [name: string]: roleTemplate} = {
         'suffix': [],
     },
     'upgrader': {
-        'prefix': [],
+        'prefix': [WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
         'body': [WORK, CARRY, MOVE, MOVE],
         'suffix': [],
     },
+    'scout': {
+        'prefix': [CLAIM, MOVE, MOVE],
+        'body': [],
+        'suffix': [],
+    }
 };
 
 const TASK_PRIORITIES: { [name: string]: { [priority: number]: string } } = {

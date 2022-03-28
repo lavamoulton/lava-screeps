@@ -1,17 +1,23 @@
 import { profile } from "./Profiler";
 import { Colony } from "./Colony";
+import { Mapper } from "mapper/Mapper";
 
 @profile
 export class Empire implements IEmpire {
     colonies: { [colName: string]: IColony };
+    mapper: IMapper;
 
     constructor() {
         this.colonies = {};
+        this.mapper = new Mapper();
     }
 
     private _initMemory(): void {
         if (!Memory.colonies) {
             Memory.colonies = {};
+        }
+        if (!Memory.mapper) {
+            Memory.mapper = {};
         }
     }
 
@@ -37,9 +43,10 @@ export class Empire implements IEmpire {
         this._initMemory();
         this._initColonies();
         this._initCreeps();
+        this.mapper.init();
     }
 
     run(): void {
-
+        this.mapper.run();
     }
 }

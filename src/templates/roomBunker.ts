@@ -48,6 +48,9 @@ export const bunker = {
                 "pos": [
                 ]
               },
+              "storage": {
+                "pos": []
+                },
               "rampart": {
                 "pos": [
                 ]
@@ -109,6 +112,9 @@ export const bunker = {
               {"x":7,"y":8}
             ]
           },
+          "storage": {
+            "pos": []
+            },
           "rampart": {
             "pos": [
               {"x":7,"y":8},

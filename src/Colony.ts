@@ -14,6 +14,7 @@ export class Colony implements IColony {
     mines: { [sourceID: Id<Source>]: IMine } | null;
     towers: StructureTower[] | null;
     manager: IColonyManager | null;
+    visualizer: IColonyVisualizer | null;
 
     constructor(name: string, room: Room) {
         if (!Memory.colonies[name]) {
@@ -28,10 +29,23 @@ export class Colony implements IColony {
         this.mines = null;
         this.towers = null;
         this.manager = null;
+        this.visualizer = null;
     }
 
     get memory(): any {
         return Memory.colonies[this.name];
+    }
+
+    get maxEnergy(): number {
+        let result = 0;
+        if (this.mines) {
+            result += (2000*Object.keys(this.mines).length)
+        }
+        result += this.spawner!.maxEnergy;
+        if (this.towers) {
+            result += (1000*this.towers.length);
+        }
+        return result;
     }
 
     private _initSpawner(): ISpawner {
@@ -52,8 +66,8 @@ export class Colony implements IColony {
         return _.zipObject(sourceIDs, mines) as { [sourceID: string]: IMine };
     }
 
-    private _initColonyManager(): IManager {
-        let cManager: IManager = new ColonyManager(this);
+    private _initColonyManager(): IColonyManager {
+        let cManager = new ColonyManager(this);
         cManager.init();
         return cManager;
     }
@@ -75,5 +89,6 @@ export class Colony implements IColony {
                 mine.run();
             });
         }
+        this.visualizer?.run();
     }
 }

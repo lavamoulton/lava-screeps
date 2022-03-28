@@ -5,9 +5,11 @@ import { Manager } from "./Manager";
 export class DataLoader extends Manager implements DataLoader {
 
     taskData?: { [roomName: string]: roomTaskData };
+    cManager: IColonyManager
 
-    constructor(colony: IColony) {
+    constructor(colony: IColony, cManager: IColonyManager) {
         super(colony);
+        this.cManager = cManager;
     }
 
     getColonyRoomData(): roomTaskData {
@@ -43,7 +45,7 @@ export class DataLoader extends Manager implements DataLoader {
                     t.store.getUsedCapacity(RESOURCE_ENERGY) > 0
                 }),
                 rampartTasks: room.find(FIND_MY_STRUCTURES, { filter: (s) =>
-                    s.structureType === STRUCTURE_RAMPART && s.hits < 20000
+                    s.structureType === STRUCTURE_RAMPART && s.hits < this.cManager.rampartTarget
                 }),
             }
         } else {

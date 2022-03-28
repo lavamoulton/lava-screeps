@@ -31,6 +31,27 @@ export class RoomPlanner implements IRoomPlanner {
                 ramparts: [],
             }
         }
+        if (!colMemory.layout.spawns) {
+            colMemory.layout.spawns = [];
+        }
+        if (!colMemory.layout.extensions) {
+            colMemory.layout.extensions = [];
+        }
+        if (!colMemory.layout.bunkerRoads) {
+            colMemory.layout.bunkerRoads = [];
+        }
+        if (!colMemory.layout.towers) {
+            colMemory.layout.towers = [];
+        }
+        if (!colMemory.layout.connections) {
+            colMemory.layout.connections = [];
+        }
+        if (!colMemory.layout.ramparts) {
+            colMemory.layout.ramparts = [];
+        }
+        if (!colMemory.layout.storage) {
+            colMemory.layout.storage = [];
+        }
         if (this.colony.spawner) {
             let spawn = this.colony.spawner.spawns[0];
             let anchor = spawn.pos;
@@ -45,6 +66,7 @@ export class RoomPlanner implements IRoomPlanner {
             colMemory.layout.towers = this._getBuildingPositions('tower', dx, dy, bunkerLayout);
             colMemory.layout.connections = this._getBuildingPositions('connections', dx, dy, bunkerLayout);
             colMemory.layout.ramparts = this._getBuildingPositions('rampart', dx, dy, bunkerLayout);
+            colMemory.layout.storage = this._getBuildingPositions('storage', dx, dy, bunkerLayout);
         }
     }
 
@@ -93,6 +115,16 @@ export class RoomPlanner implements IRoomPlanner {
                 return bunker[2];
             case 3:
                 return bunker[3];
+            case 4:
+                return bunker[4];
+            case 5:
+                return bunker[5];
+            case 6:
+                return bunker[6];
+            case 7:
+                return bunker[7];
+            case 8:
+                return bunker[8];
             default:
                 return bunker[2];
         }
@@ -123,6 +155,11 @@ export class RoomPlanner implements IRoomPlanner {
             mappedPos.forEach((pos) => {
                 let buildingType = this._getBuildingType(building);
                 if (buildingType) {
+                    if (buildingType === STRUCTURE_ROAD || buildingType === STRUCTURE_RAMPART) {
+                        if (this.colony.manager!.dataLoader!.getColonyRoomData().buildTasks.length > 2) {
+                            return;
+                        }
+                    }
                     this.colony.room.createConstructionSite(pos.x, pos.y, buildingType);
                 }
             })
@@ -167,6 +204,9 @@ export class RoomPlanner implements IRoomPlanner {
         }
         if (buildingName === 'ramparts') {
             return STRUCTURE_RAMPART;
+        }
+        if (buildingName === 'storage') {
+            return STRUCTURE_STORAGE;
         }
         return null;
     }

@@ -20,19 +20,21 @@ export class ColonyManager extends Manager implements IColonyManager {
     roomPlanner?: IRoomPlanner;
     spawnerManager?: ISpawnerManager;
     dataLoader?: IDataLoader;
+    rampartTarget: number;
 
     constructor(colony: IColony) {
         super(colony);
         this._taskPriorities = null;
+        this.rampartTarget = 0;
     }
 
     init(): void {
         this.spawnerManager = new SpawnerManager(this.colony);
         this.spawnerManager.init();
         this._taskPriorities = this._loadTaskPriorities();
-        this.dataLoader = new DataLoader(this.colony);
+        this.rampartTarget = this._setRampartTarget();
+        this.dataLoader = new DataLoader(this.colony, this);
         this.dataLoader.init();
-
         if (Game.time % 60 === 0) {
             this.roomPlanner = new RoomPlanner(this.colony);
             this.roomPlanner.init();
@@ -42,33 +44,7 @@ export class ColonyManager extends Manager implements IColonyManager {
     run(): void {
         this.spawnerManager?.run();
         this._runCreeps();
-        if (this.colony.towers) {
-            for (let i in this.colony.towers) {
-                console.log(`Checking tower actions`);
-                const tower = this.colony.towers[i];
-                const enemies = this.colony.room.find(FIND_HOSTILE_CREEPS);
-                if (enemies.length > 0) {
-                    tower.attack(enemies[0]);
-                } else {
-                    if (tower.store.getUsedCapacity(RESOURCE_ENERGY) > 400) {
-                        const repairSite = this.colony.room.find(FIND_STRUCTURES, {filter: (s) =>
-                            ((s.hits+200) < s.hitsMax) &&
-                            (s.structureType !== STRUCTURE_RAMPART &&
-                                s.structureType !== STRUCTURE_WALL)});
-                        if (repairSite.length > 0) {
-                            tower.repair(repairSite[0]);
-                        }
-                    }
-                    if (tower.store.getUsedCapacity(RESOURCE_ENERGY) > 800) {
-                        const rampartTask = this.dataLoader!.taskData![this.colony.room.name].rampartTasks[0];
-                        console.log(`TOWER: ${rampartTask}`);
-                        if (rampartTask) {
-                            tower.repair(rampartTask);
-                        }
-                    }
-                }
-            }
-        }
+        this._runTowers();
         this.dataLoader?.run();
         if (Game.time % 60 === 0) {
             this.roomPlanner?.run();
@@ -79,12 +55,83 @@ export class ColonyManager extends Manager implements IColonyManager {
         return creepTemplates.TASK_PRIORITIES;
     }
 
+    private _setRampartTarget(): number {
+        return 160000;
+        /*
+        console.log(`Max colony energy: ${this.colony.maxEnergy}`);
+        let totalEnergy = 0;
+        const highestRampartHits = this._getHighestRampartHits();
+        if (!this.colony.memory.rampartTarget) {
+            this.colony.memory.rampartTarget = highestRampartHits-2;
+        }
+        if (this._checkRampartEquality(highestRampartHits)) {
+            const containers: StructureContainer[] = this.colony.room.find(FIND_STRUCTURES, { filter: (s) =>
+                s.structureType === STRUCTURE_CONTAINER});
+            if (containers) {
+                _.forEach(containers, (c) => {
+                    totalEnergy += c.store.getUsedCapacity(RESOURCE_ENERGY);
+                });
+            }
+            totalEnergy += this.colony.spawner!.maxEnergy - this.colony.spawner!.energyNeeded;
+            if (this.colony.towers) {
+                _.forEach(this.colony.towers, (t) => {
+                    totalEnergy += t.store.getUsedCapacity(RESOURCE_ENERGY);
+                });
+            }
+            if (totalEnergy > (this.colony.maxEnergy * .9)) {
+                console.log(`Have extra energy, setting higher rampart target of ${highestRampartHits + 10000}`);
+                return highestRampartHits + 10000;
+            }
+        }
+        console.log(`Setting rampart target of ${highestRampartHits}`);
+        if (highestRampartHits < this.colony.memory.rampartTarget - 500) {
+            return this.colony.memory.rampartTarget;
+        }
+        return highestRampartHits - 2;*/
+    }
+
+    private _getHighestRampartHits(): number {
+        let highestHits = 0;
+        let ramparts = this.colony.room.find(FIND_MY_STRUCTURES, { filter: (s) =>
+            s.structureType === STRUCTURE_RAMPART
+        });
+        if (ramparts) {
+            _.forEach(ramparts, (r) => {
+                if (r.hits > highestHits) {
+                    highestHits = r.hits;
+                }
+            });
+        }
+        return highestHits;
+    }
+
+    private _checkRampartEquality(hits: number): boolean {
+        let ramparts = this.colony.room.find(FIND_MY_STRUCTURES, { filter: (s) =>
+            s.structureType === STRUCTURE_RAMPART
+        });
+        let result = true;
+        if (ramparts) {
+            _.forEach(ramparts, (r) => {
+                if (r.hits < hits) {
+                    result = false;
+                }
+            })
+        }
+        return result;
+    }
+
     private _runCreeps(): void {
         for (let i in this.colony.creeps) {
             let creep = this.colony.creeps[i];
             console.log(`${creep.name}: ${creep.memory.task}`);
+            if (creep.memory.role === 'scout') {
+                continue;
+            }
             if (creep.memory.task === 'none') {
-                this._getCreepTask(creep);
+                const task = this._getCreepTask(creep);
+                if (task) {
+                    this._checkTaskData(task, creep);
+                }
             }
             let creepTaskTemplate = taskUtils.taskStringToTemplate(creep.memory.task);
             if (creepTaskTemplate.creep === undefined) {
@@ -104,6 +151,10 @@ export class ColonyManager extends Manager implements IColonyManager {
                         }
                         this.colony.mines[source.id].miner = creep;
                     }
+                    if (task.type === 'repair') {
+
+                    }
+                    this._checkTaskData(task, creep);
                     task.step();
                 }
             }
@@ -170,30 +221,41 @@ export class ColonyManager extends Manager implements IColonyManager {
                         creep.memory.task = taskUtils.taskToString(task, constructionSite.id);
                         return task;
                     }
-                }
-                const supplyTask = colTaskData.supplyTasks[0];
-                if (supplyTask) {
-                    const task = new TaskSupply(this.colony.spawner!.spawns[0], creep);
-                    creep.memory.task = taskUtils.taskToString(task, supplyTask.id);
+                    const rampartTask = colTaskData.rampartTasks[0];
+                    if (rampartTask) {
+                        const task = new TaskRepair(rampartTask, creep);
+                        creep.memory.task = taskUtils.taskToString(task, rampartTask.id);
+                        return task;
+                    }
+                    const task = new TaskUpgrade(this.colony.controller, creep);
+                    creep.memory.task = taskUtils.taskToString(task, this.colony.controller.id);
                     return task;
                 }
-                const repairSite = colTaskData.repairTasks[0];
-                if (repairSite) {
-                    const task = new TaskRepair(repairSite, creep);
-                    creep.memory.task = taskUtils.taskToString(task, repairSite.id);
-                    return task;
-                }
-                const constructionSite = colTaskData.buildTasks[0];
-                if (constructionSite) {
-                    const task = new TaskBuild(constructionSite, creep);
-                    creep.memory.task = taskUtils.taskToString(task, constructionSite.id);
-                    return task;
-                }
-                const rampartTask = colTaskData.rampartTasks[0];
-                if (rampartTask) {
-                    const task = new TaskRepair(rampartTask, creep);
-                    creep.memory.task = taskUtils.taskToString(task, rampartTask.id);
-                    return task;
+                if (creep.memory.role === 'worker') {
+                    const supplyTask = colTaskData.supplyTasks[0];
+                    if (supplyTask) {
+                        const task = new TaskSupply(this.colony.spawner!.spawns[0], creep);
+                        creep.memory.task = taskUtils.taskToString(task, supplyTask.id);
+                        return task;
+                    }
+                    const repairSite = colTaskData.repairTasks[0];
+                    if (repairSite) {
+                        const task = new TaskRepair(repairSite, creep);
+                        creep.memory.task = taskUtils.taskToString(task, repairSite.id);
+                        return task;
+                    }
+                    const constructionSite = colTaskData.buildTasks[0];
+                    if (constructionSite) {
+                        const task = new TaskBuild(constructionSite, creep);
+                        creep.memory.task = taskUtils.taskToString(task, constructionSite.id);
+                        return task;
+                    }
+                    const rampartTask = colTaskData.rampartTasks[0];
+                    if (rampartTask) {
+                        const task = new TaskRepair(rampartTask, creep);
+                        creep.memory.task = taskUtils.taskToString(task, rampartTask.id);
+                        return task;
+                    }
                 }
                 const task = new TaskUpgrade(this.colony.controller, creep);
                 creep.memory.task = taskUtils.taskToString(task, this.colony.controller.id);
@@ -201,5 +263,60 @@ export class ColonyManager extends Manager implements IColonyManager {
             }
         }
         return null;
+    }
+
+    private _checkTaskData(task: ITask, creep: Creep): void {
+        const colRoomData = this.dataLoader!.getColonyRoomData();
+        const creepEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY);
+        switch(task.type) {
+            case 'supply':
+                const supplyTarget = task.target as (StructureSpawn | StructureExtension | StructureTower);
+                if (creepEnergy > supplyTarget.store.getFreeCapacity(RESOURCE_ENERGY)) {
+                    colRoomData.supplyTasks.splice(
+                        colRoomData.supplyTasks.indexOf(supplyTarget), 1);
+                }
+                break;
+            case 'repair':
+                const repairTarget = task.target as Structure;
+                if (creepEnergy > (repairTarget.hitsMax - repairTarget.hits)) {
+                    colRoomData.repairTasks.splice(
+                        colRoomData.repairTasks.indexOf(repairTarget), 1);
+                }
+                break;
+            case 'build':
+                const buildTarget = task.target as ConstructionSite;
+                if (creepEnergy > (buildTarget.progressTotal - buildTarget.progress)) {
+                    colRoomData.buildTasks.splice(
+                        colRoomData.buildTasks.indexOf(buildTarget), 1);
+                }
+        }
+    }
+
+    private _runTowers(): void {
+        if (this.colony.towers) {
+            for (let i in this.colony.towers) {
+                const tower = this.colony.towers[i];
+                const enemies = this.colony.room.find(FIND_HOSTILE_CREEPS);
+                if (enemies.length > 0) {
+                    tower.attack(enemies[0]);
+                } else {
+                    if (tower.store.getUsedCapacity(RESOURCE_ENERGY) > 400) {
+                        const repairSite = this.colony.room.find(FIND_STRUCTURES, {filter: (s) =>
+                            ((s.hits+200) < s.hitsMax) &&
+                            (s.structureType !== STRUCTURE_RAMPART &&
+                                s.structureType !== STRUCTURE_WALL)});
+                        if (repairSite.length > 0) {
+                            tower.repair(repairSite[0]);
+                        }
+                    }
+                    if (tower.store.getUsedCapacity(RESOURCE_ENERGY) > 800) {
+                        const rampartTask = this.dataLoader!.taskData![this.colony.room.name].rampartTasks[0];
+                        if (rampartTask) {
+                            tower.repair(rampartTask);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

@@ -17,6 +17,7 @@ declare global {
     log: any;
     colonies: any;
     empire: any;
+    mapper: { [name: string]: RoomMemoryData };
   }
 
   interface CreepMemory {

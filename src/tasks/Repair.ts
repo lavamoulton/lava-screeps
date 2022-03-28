@@ -18,7 +18,7 @@ export class TaskRepair extends Task {
         }
         const target = this.target as Structure;
         if (target.hitsMax > 20000) {
-            return target.hits < 20000;
+            return target.hits < 300000;
         }
         return target.hits < target.hitsMax;
     }

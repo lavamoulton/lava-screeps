@@ -66,7 +66,7 @@ export class SpawnerManager extends Manager {
     }
 
     private _queueCreeps(): void {
-        if (this.colony.creepsByRole['worker'].length < 4) {
+        if (this.colony.creepsByRole['worker'].length < (this.colony.maxEnergy / 1000)) {
             const workerTemplate = this._getCreepTemplate('worker');
             this.colony.spawner?.queueCreep(workerTemplate);
         }
@@ -81,7 +81,7 @@ export class SpawnerManager extends Manager {
         const numConstructionSites = colonyRoomData.buildTasks.length;
         const numRepairSites = colonyRoomData.repairTasks.length;
         const numRampartSites = colonyRoomData.rampartTasks.length;
-        const builderTarget = (numConstructionSites / 4) + (numRepairSites / 5) + (numRampartSites / 5) + 1;
+        const builderTarget = (numConstructionSites / 4) + (numRepairSites / 5) + (numRampartSites / 8) + 1;
         console.log(`Builder target ${builderTarget}`);
         if (this.colony.creepsByRole['builder'].length < builderTarget) {
             const builderTemplate = this._getCreepTemplate('builder');
@@ -90,6 +90,10 @@ export class SpawnerManager extends Manager {
         if (this.colony.creepsByRole['upgrader'].length < 2) {
             const upgraderTemplate = this._getCreepTemplate('upgrader');
             this.colony.spawner?.queueCreep(upgraderTemplate);
+        }
+        if (this.colony.creepsByRole['scout'].length < 1) {
+            const scoutTemplate = this._getCreepTemplate('scout');
+            this.colony.spawner?.queueCreep(scoutTemplate);
         }
     }
 
@@ -133,12 +137,10 @@ export class SpawnerManager extends Manager {
                 let remainingEnergy = maxEnergy;
                 result = result.concat(prefix);
                 remainingEnergy -= prefixCost;
-                console.log(`Remaining energy: ${remainingEnergy}, bodyCost: ${bodyCost}`);
 
                 if (bodyCost > 0) {
                     while (remainingEnergy > bodyCost) {
                         result = result.concat(body);
-                        console.log(`Remaining energy: ${remainingEnergy}, bodyCost: ${bodyCost}`);
                         remainingEnergy -= bodyCost;
                     }
                 }
@@ -167,7 +169,6 @@ export class SpawnerManager extends Manager {
         };
         let result = 0;
         for (let part of body) {
-            //console.log(`Body part ${part} + ${partCosts[part]}`);
             result += partCosts[part];
         }
         return result;

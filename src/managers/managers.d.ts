@@ -8,6 +8,7 @@ interface IColonyManager extends IManager {
     roomPlanner?: IRoomPlanner;
     spawnerManager?: ISpawnerManager;
     dataLoader?: IDataLoader;
+    rampartTarget: number;
 }
 
 interface ISpawnerManager extends IManager {

@@ -26,9 +26,9 @@ export class Spawner extends Structure implements ISpawner {
         for (let spawn in this.spawns) {
             result += this.spawns[spawn].store.getFreeCapacity(RESOURCE_ENERGY);
         }
-        /*for (let extension in this.extensions) {
+        for (let extension in this.extensions) {
             result += this.extensions[extension].store.getFreeCapacity(RESOURCE_ENERGY);
-        }*/
+        }
         return result;
     }
 
@@ -38,7 +38,6 @@ export class Spawner extends Structure implements ISpawner {
     }
 
     queueCreep(creepTemplate: creepTemplate, priority?: number): void {
-        console.log(`Spawning creep: ${creepTemplate.body}`);
         if (priority === undefined) {
             priority = 1000;
         }
