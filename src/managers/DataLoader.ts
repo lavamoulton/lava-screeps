@@ -5,15 +5,36 @@ import { Manager } from "./Manager";
 export class DataLoader extends Manager implements DataLoader {
 
     taskData?: { [roomName: string]: roomTaskData };
-    cManager: IColonyManager
 
-    constructor(colony: IColony, cManager: IColonyManager) {
+    constructor(colony: IColony) {
         super(colony);
-        this.cManager = cManager;
     }
 
     getColonyRoomData(): roomTaskData {
         return this.taskData![this.colony.room.name];
+    }
+
+    getRemoteRoomData(): { [name: string]: roomTaskData } {
+        let result: { [name: string]: roomTaskData } = {};
+        for (let i in this.colony.outposts) {
+            let outpost = this.colony.outposts[i];
+            result[outpost.name] = {
+                resources: outpost.find(FIND_DROPPED_RESOURCES),
+                supplyTasks: [],
+                towerSupplyTasks: [],
+                buildTasks: outpost.find(FIND_CONSTRUCTION_SITES),
+                repairTasks: outpost.find(FIND_STRUCTURES, { filter: (s) =>
+                    ((s.hits+200) < s.hitsMax) &&
+                    (s.structureType !== STRUCTURE_RAMPART &&
+                        s.structureType !== STRUCTURE_WALL
+                )}),
+                tombstones: outpost.find(FIND_TOMBSTONES, { filter: (t) =>
+                    t.store.getUsedCapacity(RESOURCE_ENERGY) > 0}),
+                rampartTasks: outpost.find(FIND_STRUCTURES, { filter: (s) =>
+                    (s.structureType === STRUCTURE_RAMPART || s.structureType === STRUCTURE_WALL) && s.hits < 100000}),
+            }
+        }
+        return result;
     }
 
     init(): void {
@@ -32,8 +53,10 @@ export class DataLoader extends Manager implements DataLoader {
                 resources: room.find(FIND_DROPPED_RESOURCES),
                 supplyTasks: room.find(FIND_STRUCTURES, {filter: (s) =>
                     (s.structureType === STRUCTURE_EXTENSION ||
-                    s.structureType === STRUCTURE_SPAWN ||
-                    s.structureType === STRUCTURE_TOWER) &&
+                    s.structureType === STRUCTURE_SPAWN) &&
+                    s.store.getFreeCapacity(RESOURCE_ENERGY) > 0}),
+                towerSupplyTasks: room.find(FIND_STRUCTURES, { filter: (s) =>
+                    (s.structureType === STRUCTURE_TOWER) &&
                     s.store.getFreeCapacity(RESOURCE_ENERGY) > 0}),
                 buildTasks: room.find(FIND_CONSTRUCTION_SITES),
                 repairTasks: room.find(FIND_STRUCTURES, {filter: (s) =>
@@ -44,14 +67,15 @@ export class DataLoader extends Manager implements DataLoader {
                 tombstones: room.find(FIND_TOMBSTONES, { filter: (t) =>
                     t.store.getUsedCapacity(RESOURCE_ENERGY) > 0
                 }),
-                rampartTasks: room.find(FIND_MY_STRUCTURES, { filter: (s) =>
-                    s.structureType === STRUCTURE_RAMPART && s.hits < this.cManager.rampartTarget
+                rampartTasks: room.find(FIND_STRUCTURES, { filter: (s) =>
+                    (s.structureType === STRUCTURE_RAMPART || s.structureType === STRUCTURE_WALL) && s.hits < 100000
                 }),
             }
         } else {
             return {
                 resources: [],
                 supplyTasks: [],
+                towerSupplyTasks: [],
                 buildTasks: [],
                 repairTasks: [],
                 tombstones: [],

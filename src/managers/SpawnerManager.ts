@@ -32,7 +32,7 @@ export class SpawnerManager extends Manager {
             this._spawnEmergencyWorker();
             return;
         }
-        if (this.colony.creeps.length < 2) {
+        if (this.colony.creepsByRole['worker'].length < 2) {
             this._spawnEmergencyWorker();
             return;
         }
@@ -66,34 +66,60 @@ export class SpawnerManager extends Manager {
     }
 
     private _queueCreeps(): void {
-        if (this.colony.creepsByRole['worker'].length < (this.colony.maxEnergy / 1000)) {
+        if (this.colony.creepsByRole['worker'].length < 2) {
             const workerTemplate = this._getCreepTemplate('worker');
-            this.colony.spawner?.queueCreep(workerTemplate);
+            this.colony.spawner?.queueCreep(workerTemplate, 1);
         }
         if (this.colony.mines) {
             let numMines = Object.keys(this.colony.mines).length;
             if (this.colony.creepsByRole['miner'].length < numMines) {
                 const minerTemplate = this._getCreepTemplate('miner');
-                this.colony.spawner?.queueCreep(minerTemplate);
+                console.log(`Attempting to spawn miner`);
+                this.colony.spawner?.queueCreep(minerTemplate, 2);
+            }
+            if (this.colony.storage) {
+                if (this.colony.creepsByRole['hauler'].length < numMines) {
+                    const haulerTemplate = this._getCreepTemplate('hauler');
+                    this.colony.spawner.queueCreep(haulerTemplate, 5);
+                }
+            }
+            if (this.colony.outpostMines) {
+                let numOutpostMines = Object.keys(this.colony.outpostMines).length;
+                if (this.colony.creepsByRole['miner'].length < numMines + numOutpostMines) {
+                    const minerTemplate = this._getCreepTemplate('miner');
+                    this.colony.spawner.queueCreep(minerTemplate, 6);
+                }
+                if (this.colony.creepsByRole['hauler'].length < (numMines + numOutpostMines - 1)) {
+                    const haulerTemplate = this._getCreepTemplate('hauler');
+                    this.colony.spawner.queueCreep(haulerTemplate, 7);
+                }
             }
         }
-        const colonyRoomData = this.colony.manager!.dataLoader!.getColonyRoomData();
+        const colonyRoomData = this.colony.taskData;
         const numConstructionSites = colonyRoomData.buildTasks.length;
         const numRepairSites = colonyRoomData.repairTasks.length;
         const numRampartSites = colonyRoomData.rampartTasks.length;
-        const builderTarget = (numConstructionSites / 4) + (numRepairSites / 5) + (numRampartSites / 8) + 1;
-        console.log(`Builder target ${builderTarget}`);
+        const builderTarget = 2;
+        //const builderTarget = (numConstructionSites / 10) + (numRepairSites / 20) + (numRampartSites / 100) + 1;
         if (this.colony.creepsByRole['builder'].length < builderTarget) {
             const builderTemplate = this._getCreepTemplate('builder');
-            this.colony.spawner?.queueCreep(builderTemplate);
+            this.colony.spawner?.queueCreep(builderTemplate, 4);
         }
-        if (this.colony.creepsByRole['upgrader'].length < 2) {
+        if (this.colony.creepsByRole['upgrader'].length < 1) {
             const upgraderTemplate = this._getCreepTemplate('upgrader');
-            this.colony.spawner?.queueCreep(upgraderTemplate);
+            this.colony.spawner?.queueCreep(upgraderTemplate, 3);
         }
-        if (this.colony.creepsByRole['scout'].length < 1) {
+        if (this.colony.creepsByRole['miner'].length < 4) {
+            const minerTemplate = this._getCreepTemplate('miner');
+            this.colony.spawner.queueCreep(minerTemplate, 6);
+        }
+        if (this.colony.creepsByRole['scout'].length < 0) {
             const scoutTemplate = this._getCreepTemplate('scout');
-            this.colony.spawner?.queueCreep(scoutTemplate);
+            this.colony.spawner?.queueCreep(scoutTemplate, 8);
+        }
+        if (this.colony.creepsByRole['melee'].length < 0) {
+            const meleeTemplate = this._getCreepTemplate('melee');
+            //this.colony.spawner.queueCreep(meleeTemplate, 8);
         }
     }
 

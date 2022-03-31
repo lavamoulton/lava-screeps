@@ -1,6 +1,7 @@
 import { profile } from "../Profiler";
 import { Traveler } from "utils/Traveler";
 import { bunker } from "../templates/roomBunker";
+import { formatWithOptions } from "util";
 
 @profile
 export class RoomPlanner implements IRoomPlanner {
@@ -82,6 +83,16 @@ export class RoomPlanner implements IRoomPlanner {
                 }
             })
         }
+        if (this.colony.outpostMines) {
+            _.forEach(this.colony.outpostMines, (mine) => {
+                if (mine.output) {
+                    if (!colMemory[`outpostMineRoad${mine.source.id}`]) {
+                        colMemory[`outpostMineRoad${mine.source.id}`] = [];
+                        colMemory[`outpostMineRoad${mine.source.id}`] = this._getMineRoad(mine);
+                    }
+                }
+            })
+        }
     }
 
     private _getMineRoad(mine: IMine): posTemplate[] {
@@ -91,7 +102,37 @@ export class RoomPlanner implements IRoomPlanner {
         const travelPaths = _.sortBy(_.map(connections, (connection) => {
                 return Traveler.findTravelPath(outputPos,
                     new RoomPosition(connection.x, connection.y, connection.room),
-                    { ignoreCreeps: true });
+                    { ignoreCreeps: true,
+                      roomCallback: (roomName, matrix) => {
+                          let room = Game.rooms[roomName];
+                          if (room) {
+                              for (let x=0; x<50; x++) {
+                                  for (let y=0; y<50; y++) {
+                                      if (room.getTerrain().get(x, y) === TERRAIN_MASK_SWAMP || room.getTerrain().get(x, y) === 0) {
+                                          matrix.set(x, y, 3);
+                                      }
+                                  }
+                              }
+                              let impassibleStructures: Structure[] = [];
+                              for (let structure of room.find(FIND_STRUCTURES)) {
+                                  if (structure instanceof StructureRampart) {
+                                      if (!structure.my && !structure.isPublic) {
+                                          impassibleStructures.push(structure);
+                                      }
+                                  } else if (structure instanceof StructureContainer) {
+                                    matrix.set(structure.pos.x, structure.pos.y, 5);
+                                  } else if (structure instanceof StructureRoad) {
+                                    matrix.set(structure.pos.x, structure.pos.y, 1);
+                                  } else {
+                                      impassibleStructures.push(structure);
+                                  }
+                              }
+                              for (let structure of impassibleStructures) {
+                                  matrix.set(structure.pos.x, structure.pos.y, 0xff);
+                              }
+                          }
+                          return matrix;
+                      } });
             }), (path) => {
                 return path.cost;
             }
@@ -156,8 +197,13 @@ export class RoomPlanner implements IRoomPlanner {
                 let buildingType = this._getBuildingType(building);
                 if (buildingType) {
                     if (buildingType === STRUCTURE_ROAD || buildingType === STRUCTURE_RAMPART) {
-                        if (this.colony.manager!.dataLoader!.getColonyRoomData().buildTasks.length > 2) {
+                        if (this.colony.taskData.buildTasks.length > 2) {
                             return;
+                        }
+                        if (buildingType === STRUCTURE_RAMPART) {
+                            if (this.colony.taskData.rampartTasks.length > 1) {
+                                return;
+                            }
                         }
                     }
                     this.colony.room.createConstructionSite(pos.x, pos.y, buildingType);
@@ -177,10 +223,33 @@ export class RoomPlanner implements IRoomPlanner {
                         const positions: posTemplate[] = colMemory[`mineRoad${mine.source.id}`];
                         const mappedPos = _.map(positions, pos => new RoomPosition(pos.x, pos.y, pos.room));
                         mappedPos.forEach((pos => {
-                            this.colony.room.createConstructionSite(pos.x, pos.y, STRUCTURE_ROAD);
+                            let room = Game.rooms[pos.roomName];
+                            room.createConstructionSite(pos.x, pos.y, STRUCTURE_ROAD);
                         }));
                     }
                     colMemory[`mineRoad${mine.source.id}`] = this._getMineRoad(mine);
+                }
+            })
+        }
+        if (this.colony.outpostMines) {
+            _.forEach(this.colony.outpostMines, (mine) => {
+                if (mine.output) {
+                    if (!colMemory[`outpostMineRoad${mine.source.id}`]) {
+                        colMemory[`outpostMineRoad${mine.source.id}`] = [];
+                    } else {
+                        const positions: posTemplate[] = colMemory[`outpostMineRoad${mine.source.id}`];
+                        const mappedPos = _.map(positions, pos => new RoomPosition(pos.x, pos.y, pos.room));
+                        mappedPos.forEach((pos => {
+                            let room = Game.rooms[pos.roomName];
+                            if (room) {
+                                console.log(`--- Calling room visual circle ---`);
+                                new RoomVisual(room.name).circle(pos.x, pos.y, { radius: .45, fill: "transparent", stroke: "red", strokeWidth: .15, opacity: 1});
+                                room.createConstructionSite(pos.x, pos.y, STRUCTURE_ROAD);
+                            }
+                            //room.createConstructionSite(pos.x, pos.y, STRUCTURE_ROAD);
+                        }));
+                    }
+                    colMemory[`outpostMineRoad${mine.source.id}`] = this._getMineRoad(mine);
                 }
             })
         }

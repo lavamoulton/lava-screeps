@@ -11,30 +11,32 @@ import { RoomPlanner } from "../planners/RoomPlanner";
 import { TaskRepair } from "tasks/Repair";
 import { TaskPickup } from "tasks/Pickup";
 import { SpawnerManager } from "./SpawnerManager";
-import { DataLoader } from "./DataLoader";
+import { Traveler } from "utils/Traveler";
+import { TaskMove } from "tasks/Move";
 
 @profile
 export class ColonyManager extends Manager implements IColonyManager {
 
-    private _taskPriorities: { [name: string]: { [priority: number]: string } } | null;
     roomPlanner?: IRoomPlanner;
     spawnerManager?: ISpawnerManager;
-    dataLoader?: IDataLoader;
     rampartTarget: number;
+    private _idleCreeps: Creep[];
+    private _workCreeps: Creep[];
+    private _taskPermissions: { [name: string]: { [role: string]: boolean } };
 
     constructor(colony: IColony) {
         super(colony);
-        this._taskPriorities = null;
         this.rampartTarget = 0;
+        this._idleCreeps = [];
+        this._workCreeps = [];
+        this._taskPermissions = creepTemplates.TASK_PERMISSIONS;
     }
 
     init(): void {
         this.spawnerManager = new SpawnerManager(this.colony);
         this.spawnerManager.init();
-        this._taskPriorities = this._loadTaskPriorities();
         this.rampartTarget = this._setRampartTarget();
-        this.dataLoader = new DataLoader(this.colony, this);
-        this.dataLoader.init();
+        this._initCreeps();
         if (Game.time % 60 === 0) {
             this.roomPlanner = new RoomPlanner(this.colony);
             this.roomPlanner.init();
@@ -45,14 +47,9 @@ export class ColonyManager extends Manager implements IColonyManager {
         this.spawnerManager?.run();
         this._runCreeps();
         this._runTowers();
-        this.dataLoader?.run();
         if (Game.time % 60 === 0) {
             this.roomPlanner?.run();
         }
-    }
-
-    private _loadTaskPriorities(): { [name: string]: { [priority: number]: string } } {
-        return creepTemplates.TASK_PRIORITIES;
     }
 
     private _setRampartTarget(): number {
@@ -120,10 +117,52 @@ export class ColonyManager extends Manager implements IColonyManager {
         return result;
     }
 
+    private _initCreeps(): void {
+        for (let i in this.colony.creeps) {
+            let creep = this.colony.creeps[i];
+            if (creep.memory.role === 'melee' || creep.memory.role === 'scout') {
+                continue;
+            }
+            if (creep.memory.task === 'none') {
+                this._idleCreeps.push(creep);
+            } else {
+                this._workCreeps.push(creep);
+            }
+        }
+    }
+
     private _runCreeps(): void {
+        for (let i in this._workCreeps) {
+            let creep = this._workCreeps[i];
+            console.log(`${creep.name} (working): ${creep.memory.task}`);
+            this._runWorkingCreep(creep);
+        }
+
+        for (let i in this._idleCreeps) {
+            let creep = this._idleCreeps[i];
+            console.log(`${creep.name} (idle): Setting task`);
+            this._runIdleCreep(creep);
+        }
+
+        /*
         for (let i in this.colony.creeps) {
             let creep = this.colony.creeps[i];
             console.log(`${creep.name}: ${creep.memory.task}`);
+            if (creep.memory.role === 'melee') {
+                let attackObject = Game.getObjectById('623e70a769913950ea385a3f' as Id<RoomObject>);
+                if (attackObject) {
+                    if (creep.room !== attackObject.room) {
+                        Traveler.travelTo(creep, attackObject);
+                    }
+                    if (creep.pos.getRangeTo(attackObject.pos.x, attackObject.pos.y) > 1) {
+                        Traveler.travelTo(creep, attackObject);
+                    }
+                    creep.attack(attackObject as StructureSpawn);
+                } else {
+                    Traveler.travelTo(creep, new RoomPosition(5, 7, this.colony.room.name));
+                }
+                continue;
+            }
             if (creep.memory.role === 'scout') {
                 continue;
             }
@@ -136,60 +175,351 @@ export class ColonyManager extends Manager implements IColonyManager {
             let creepTaskTemplate = taskUtils.taskStringToTemplate(creep.memory.task);
             if (creepTaskTemplate.creep === undefined) {
                 creep.memory.task = 'none';
+                continue;
             }
             let task = taskUtils.createTask(creepTaskTemplate);
             if (!task) {
                 creep.memory.task = 'none';
             } else {
-                if (!task.isValidTarget() || !task.isValidTask() && creep.memory.role !== 'miner') {
-                    task.remove();
+                if (!(task.isValidTarget() && task.isValidTask()) && !(task.type === 'harvest' && creep.memory.role === 'miner')) {
+                        task.remove();
                 } else {
                     if (creep.memory.role === 'miner') {
-                        const source = task.target as Source;
-                        if (!this.colony.mines) {
-                            return;
+                        if (task.type !== 'move') {
+                            const source = task.target as Source;
+                            if (!this.colony.mines) {
+                                return;
+                            }
+                            if (this.colony.mines[source.id]) {
+                                if (this.colony.mines[source.id].miner) {
+                                    creep.memory.task = 'none';
+                                    return;
+                                }
+                                this.colony.mines[source.id].miner = creep;
+                            }
+                            if (!this.colony.outpostMines) {
+                                return;
+                            }
+                            if (this.colony.outpostMines[source.id]) {
+                                if (this.colony.outpostMines[source.id].miner) {
+                                    creep.memory.task = 'none';
+                                    return;
+                                }
+                                this.colony.outpostMines[source.id].miner = creep;
+                            }
                         }
-                        this.colony.mines[source.id].miner = creep;
-                    }
-                    if (task.type === 'repair') {
-
                     }
                     this._checkTaskData(task, creep);
                     task.step();
                 }
             }
+        }*/
+    }
+
+    private _runWorkingCreep(creep: Creep) {
+        let creepTaskTemplate = taskUtils.taskStringToTemplate(creep.memory.task);
+        let task = taskUtils.createTask(creepTaskTemplate);
+        if (!task) {
+            creep.memory.task = 'none';
+            this._idleCreeps.push(creep);
+            console.log(`- ERROR: taskUtils.createTask did not return a valid task`);
+            return;
+        }
+        if (!(task.isValidTarget() && task.isValidTask()) && !(task.type ==='harvest' && creep.memory.role === 'miner')) {
+            if (task.type === 'move') {
+                console.log(`Removing move task from ${creep.name}`);
+            }
+            task.remove();
+            this._idleCreeps.push(creep);
+            console.log(`Task is no longer valid, removing`);
+            return;
+        }
+        if (creep.memory.role === 'miner') {
+            if (task.type === 'harvest') {
+                this._checkMiner(creep, task);
+            }
+        }
+        this._checkTaskData(task, creep);
+        task.step();
+    }
+
+    private _checkMiner(creep: Creep, task: ITask) {
+        const source = task.target as Source;
+        if (!this.colony.mines) {
+            return;
+        }
+        if (this.colony.mines[source.id]) {
+            if (this.colony.mines[source.id].miner) {
+                creep.memory.task = 'none';
+                this._idleCreeps.push(creep);
+                return;
+            }
+            this.colony.mines[source.id].miner = creep;
+        }
+        if (!this.colony.outpostMines) {
+            return;
+        }
+        if (this.colony.outpostMines[source.id]) {
+            if (this.colony.outpostMines[source.id].miner) {
+                creep.memory.task = 'none';
+                this._idleCreeps.push(creep);
+                return;
+            }
+            this.colony.outpostMines[source.id].miner = creep;
         }
     }
 
-    private _getCreepTask(creep: Creep): ITask | null {
+    private _runIdleCreep(creep: Creep) {
         if (creep.memory.role === 'miner') {
-            if (!this.colony.mines) {
-                return null;
-            }
-            const openMine = _.filter(this.colony.mines, (mine) => {
-                return !mine.miner;
-            })[0];
-            if (!openMine) {
-                return null;
-            }
-            const task = new TaskHarvest(openMine.source, creep);
-            creep.memory.task = taskUtils.taskToString(task, openMine.source.id);
-            return task;
+            this._getMinerTask(creep);
+            return;
         } else {
-            const colTaskData = this.dataLoader!.taskData![this.colony.room.name];
+            const data = this.colony.taskData;
+            const outpostData = this.colony.outpostTaskData;
+            const outpostLength = Object.keys(outpostData).length;
+            const permissions = this._taskPermissions[creep.memory.role];
+            if (!permissions) {
+                console.log(`Error loading permissiosn for idle creep ${creep.name}`);
+                return;
+            }
             if (creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
-                const droppedResource = colTaskData.resources[0];
-                if (droppedResource) {
-                    const task = new TaskPickup(droppedResource, creep);
-                    creep.memory.task = taskUtils.taskToString(task, droppedResource.id);
+                if (permissions.storage && this.colony.storage) {
+                    if (this.colony.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 1000) {
+                        const task = new TaskWithdraw(this.colony.storage, creep);
+                        creep.memory.task = taskUtils.taskToString(task, this.colony.storage.id);
+                        console.log(`Getting storage withdrawl task`);
+                        return task;
+                    }
+                }
+                if (permissions.pickup && data.resources.length > 0) {
+                    const droppedResource = data.resources[0];
+                    if (droppedResource.amount > creep.store.getFreeCapacity(RESOURCE_ENERGY)) {
+                        const task = new TaskPickup(droppedResource, creep);
+                        creep.memory.task = taskUtils.taskToString(task, droppedResource.id);
+                        console.log(`Picking up dropped resource, lowering dropped resource amount ${droppedResource.amount}`);
+                        droppedResource.amount -= creep.store.getFreeCapacity(RESOURCE_ENERGY);
+                        console.log(`New dropped resource amount ${droppedResource.amount}`);
+                        return task;
+                    }
+                }
+                if (permissions.mines && this.colony.mines) {
+                    const openMineOutputs = _.filter(this.colony.mines, (mine) => {
+                        return (mine.output && mine.remainingOutput > creep.store.getFreeCapacity(RESOURCE_ENERGY))});
+                    if (openMineOutputs.length > 0) {
+                        const task = new TaskWithdraw(openMineOutputs[0].output!, creep);
+                        creep.memory.task = taskUtils.taskToString(task, openMineOutputs[0].output!.id);
+                        console.log(`Withdrawing from local mine output task`);
+                        return task;
+                    }
+                }
+                if (permissions.remotepickup && outpostLength > 0) {
+                    if (creep.room.name in outpostData) {
+                        let roomData = outpostData[creep.room.name];
+                        if (roomData.resources.length > 0) {
+                            const droppedResource = roomData.resources[0];
+                            if (droppedResource.amount > creep.store.getFreeCapacity(RESOURCE_ENERGY)) {
+                                const task = new TaskPickup(droppedResource, creep);
+                                creep.memory.task = taskUtils.taskToString(task, droppedResource.id);
+                                console.log(`Picking up dropped resource, lowering dropped resource amount ${droppedResource.amount}`);
+                                //droppedResource.amount -= creep.store.getFreeCapacity(RESOURCE_ENERGY);
+                                console.log(`New dropped resource amount ${droppedResource.amount}`);
+                                return task;
+                            }
+                        }
+                    }
+                    for (let i in outpostData) {
+                        let roomData = outpostData[i];
+                        if (roomData.resources.length > 0) {
+                            const droppedResource = roomData.resources[0];
+                            if (droppedResource.amount > creep.store.getFreeCapacity(RESOURCE_ENERGY)) {
+                                const task = new TaskPickup(droppedResource, creep);
+                                creep.memory.task = taskUtils.taskToString(task, droppedResource.id);
+                                console.log(`Picking up dropped resource, lowering dropped resource amount ${droppedResource.amount}`);
+                                //droppedResource.amount -= creep.store.getFreeCapacity(RESOURCE_ENERGY);
+                                console.log(`New dropped resource amount ${droppedResource.amount}`);
+                                return task;
+                            }
+                        }
+                    }
+                }
+                if (permissions.remoteMines && this.colony.outpostMines) {
+                    const openOutpostMineOutputs = _.filter(this.colony.outpostMines, (mine) => {
+                        return (mine.output && mine.remainingOutput > creep.store.getFreeCapacity(RESOURCE_ENERGY))
+                    });
+                    if (openOutpostMineOutputs.length > 0) {
+                        const task = new TaskWithdraw(openOutpostMineOutputs[0].output!, creep);
+                        creep.memory.task = taskUtils.taskToString(task, openOutpostMineOutputs[0].output!.id);
+                        console.log(`Withdrawing from remote mine output task`);
+                        return task;
+                    }
+                }
+                if (permissions.harvest) {
+                    const source = this.colony.room.find(FIND_SOURCES_ACTIVE)[1];
+                    const task = new TaskHarvest(source, creep);
+                    creep.memory.task = taskUtils.taskToString(task, source.id);
+                    console.log(`Harvesting resource task`);
                     return task;
                 }
+                Traveler.travelTo(creep, new RoomPosition(42, 40, this.colony.room.name));
+                return;
+            }
+
+            if (permissions.supply && data.supplyTasks.length > 0) {
+                const task = new TaskSupply(data.supplyTasks[0], creep);
+                creep.memory.task = taskUtils.taskToString(task, data.supplyTasks[0].id);
+                this._checkTaskData(task, creep);
+                console.log(`Getting supply task for ${task.target}`);
+                return task;
+            }
+            if (permissions.supplyTower && data.towerSupplyTasks.length > 0) {
+                const task = new TaskSupply(data.towerSupplyTasks[0], creep);
+                creep.memory.task = taskUtils.taskToString(task, data.towerSupplyTasks[0].id);
+                this._checkTaskData(task, creep);
+                console.log(`Getting supply tower task for ${task.target}`);
+                return task;
+            }
+            if (permissions.repair && data.repairTasks.length > 0) {
+                const task = new TaskRepair(data.repairTasks[0], creep);
+                creep.memory.task = taskUtils.taskToString(task, data.repairTasks[0].id);
+                this._checkTaskData(task, creep);
+                console.log(`Getting repair task for ${task.target}`);
+                return task;
+            }
+            if (permissions.build && data.buildTasks.length > 0) {
+                const task = new TaskBuild(data.buildTasks[0], creep);
+                creep.memory.task = taskUtils.taskToString(task, data.buildTasks[0].id);
+                this._checkTaskData(task, creep);
+                console.log(`Getting build task for ${task.target}`);
+                return task;
+            }
+            if (permissions.remoterepair && outpostLength > 0) {
+                if (creep.room.name in outpostData) {
+                    let roomData = outpostData[creep.room.name];
+                    if (roomData.repairTasks.length > 0) {
+                        const repairTask = roomData.repairTasks[0];
+                        const task = new TaskRepair(repairTask, creep);
+                        creep.memory.task = taskUtils.taskToString(task, repairTask.id);
+                        return task;
+                    }
+                }
+                for (let i in outpostData) {
+                    let roomData = outpostData[i];
+                    if (roomData.repairTasks.length > 0) {
+                        const repairTask = roomData.repairTasks[0];
+                        const task = new TaskRepair(repairTask, creep);
+                        creep.memory.task = taskUtils.taskToString(task, repairTask.id);
+                        return task;
+                    }
+                }
+            }
+            if (permissions.remotebuild && outpostLength > 0) {
+                if (creep.room.name in outpostData) {
+                    let roomData = outpostData[creep.room.name];
+                    if (roomData.buildTasks.length > 0) {
+                        const buildTask = roomData.buildTasks[0];
+                        const task = new TaskBuild(buildTask, creep);
+                        creep.memory.task = taskUtils.taskToString(task, buildTask.id);
+                        return task;
+                    }
+                }
+                for (let i in outpostData) {
+                    let roomData = outpostData[i];
+                    if (roomData.buildTasks.length > 0) {
+                        const buildTask = roomData.buildTasks[0];
+                        const task = new TaskBuild(buildTask, creep);
+                        creep.memory.task = taskUtils.taskToString(task, buildTask.id);
+                        return task;
+                    }
+                }
+            }
+            if (permissions.supplyStorage && this.colony.storage) {
+                if (this.colony.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 750000) {
+                    const task = new TaskSupply(this.colony.storage, creep);
+                    creep.memory.task = taskUtils.taskToString(task, this.colony.storage.id);
+                    console.log(`Supplying storage ${task.target}`);
+                    return task;
+                }
+            }
+            if (permissions.repair && data.rampartTasks.length > 0) {
+                const task = new TaskRepair(data.rampartTasks[0], creep);
+                creep.memory.task = taskUtils.taskToString(task, data.rampartTasks[0].id);
+                this._checkTaskData(task, creep);
+                console.log(`Getting rampart repair task for ${task.target}`);
+                return task;
+            }
+            if (permissions.remoterepair && outpostLength > 0) {
+                for (let i in outpostData) {
+                    let roomData = outpostData[i];
+                    if (roomData.rampartTasks.length > 0) {
+                        const rampartTask = roomData.rampartTasks[0];
+                        const task = new TaskBuild(rampartTask, creep);
+                        creep.memory.task = taskUtils.taskToString(task, rampartTask.id);
+                        return task;
+                    }
+                }
+            }
+            if (permissions.upgrade) {
+                const task = new TaskUpgrade(this.colony.controller, creep);
+                creep.memory.task = taskUtils.taskToString(task, this.colony.controller.id);
+                console.log(`Getting upgrade task for ${task.target}`);
+                return task;
+            }
+
+            console.log(`Could not find valid task, defaulting to idle`);
+            Traveler.travelTo(creep, new RoomPosition(42, 40, this.colony.room.name));
+            return;
+        }
+    }
+
+    /*
+    private _getCreepTask(creep: Creep): ITask | null {
+        if (creep.memory.role === 'miner') {
+            this._getMinerTask(creep);
+        } else {
+            const colTaskData = this.colony.taskData;
+            if (creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
+                if (creep.memory.role === 'hauler') {
+                    if (this.colony.outpostMines) {
+                        for (let roomName in this.colony.memory.outposts) {
+                            let room = Game.rooms[roomName];
+                            if (room) {
+                                const droppedResource = room.find(FIND_DROPPED_RESOURCES)[0];
+                                if(droppedResource) {
+                                    if (droppedResource.amount > creep.store.getFreeCapacity(RESOURCE_ENERGY)) {
+                                        const task = new TaskPickup(droppedResource, creep);
+                                        creep.memory.task = taskUtils.taskToString(task, droppedResource.id);
+                                        return task;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (creep.memory.role === 'worker' && this.colony.creeps.length < 12) {
+                    if (this.colony.storage) {
+                        if (this.colony.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 1000) {
+                            const task = new TaskWithdraw(this.colony.storage, creep);
+                            creep.memory.task = taskUtils.taskToString(task, this.colony.storage.id);
+                            return task;
+                        }
+                    }
+                }
+                const droppedResource = colTaskData.resources[0];
+                if (droppedResource) {
+                    if (droppedResource.amount > creep.store.getFreeCapacity(RESOURCE_ENERGY)) {
+                        const task = new TaskPickup(droppedResource, creep);
+                        creep.memory.task = taskUtils.taskToString(task, droppedResource.id);
+                        return task;
+                    }
+                }
+
                 const tombstone = colTaskData.tombstones[0];
                 if (tombstone) {
                     const task = new TaskWithdraw(tombstone, creep);
                     creep.memory.task = taskUtils.taskToString(task, tombstone.id);
                     return task;
                 }
+
                 const openMineOutputs = _.filter(this.colony.mines!, (mine) => {
                     return (mine.output && mine.remainingOutput > creep.store.getFreeCapacity(RESOURCE_ENERGY))});
                 if (openMineOutputs.length > 0) {
@@ -197,10 +527,28 @@ export class ColonyManager extends Manager implements IColonyManager {
                     creep.memory.task = taskUtils.taskToString(task, openMineOutputs[0].output!.id);
                     return task;
                 }
+                if (this.colony.storage) {
+                    if (this.colony.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 1000) {
+                        if (creep.memory.role !== 'hauler') {
+                            const task = new TaskWithdraw(this.colony.storage, creep);
+                            creep.memory.task = taskUtils.taskToString(task, this.colony.storage.id);
+                            return task;
+                        }
+                    }
+                }
+                if (creep.memory.role === 'worker') {
+                    const source = this.colony.room.find(FIND_SOURCES_ACTIVE)[1];
+                    const task = new TaskHarvest(source, creep);
+                    creep.memory.task = taskUtils.taskToString(task, source.id);
+                    return task;
+                }
+
                 const source = this.colony.room.find(FIND_SOURCES_ACTIVE)[0];
                 const task = new TaskHarvest(source, creep);
                 creep.memory.task = taskUtils.taskToString(task, source.id);
                 return task;
+                Traveler.travelTo(creep, new RoomPosition(41, 39, this.colony.room.name));
+                creep.memory.task = 'none';
             }
             if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
                 if (creep.memory.role === 'upgrader') {
@@ -234,8 +582,14 @@ export class ColonyManager extends Manager implements IColonyManager {
                 if (creep.memory.role === 'worker') {
                     const supplyTask = colTaskData.supplyTasks[0];
                     if (supplyTask) {
-                        const task = new TaskSupply(this.colony.spawner!.spawns[0], creep);
+                        const task = new TaskSupply(supplyTask, creep);
                         creep.memory.task = taskUtils.taskToString(task, supplyTask.id);
+                        return task;
+                    }
+                    const towerSupplyTask = colTaskData.towerSupplyTasks[0];
+                    if (towerSupplyTask) {
+                        const task = new TaskSupply(towerSupplyTask, creep);
+                        creep.memory.task = taskUtils.taskToString(task, towerSupplyTask.id);
                         return task;
                     }
                     const repairSite = colTaskData.repairTasks[0];
@@ -257,23 +611,97 @@ export class ColonyManager extends Manager implements IColonyManager {
                         return task;
                     }
                 }
+                if (creep.memory.role === 'hauler') {
+                    if (this.colony.storage) {
+                        if (this.colony.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 500000) {
+                            const task = new TaskSupply(this.colony.storage, creep);
+                            creep.memory.task = taskUtils.taskToString(task, this.colony.storage.id);
+                            return task;
+                        }
+                    }
+                    const repairSite = colTaskData.repairTasks[0];
+                    if (repairSite) {
+                        const task = new TaskRepair(repairSite, creep);
+                        creep.memory.task = taskUtils.taskToString(task, repairSite.id);
+                        return task;
+                    }
+                    const rampartTask = colTaskData.rampartTasks[0];
+                    if (rampartTask) {
+                        const task = new TaskRepair(rampartTask, creep);
+                        creep.memory.task = taskUtils.taskToString(task, rampartTask.id);
+                        return task;
+                    }
+                    if (this.colony.storage) {
+                        if (this.colony.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 700000) {
+                            const task = new TaskSupply(this.colony.storage, creep);
+                            creep.memory.task = taskUtils.taskToString(task, this.colony.storage.id);
+                            return task;
+                        }
+                    }
+                }
                 const task = new TaskUpgrade(this.colony.controller, creep);
                 creep.memory.task = taskUtils.taskToString(task, this.colony.controller.id);
                 return task;
             }
         }
         return null;
+    }*/
+
+    private _getMinerTask(creep: Creep): ITask | null {
+        if (!this.colony.mines) {
+            return null;
+        }
+        let openMine = _.filter(this.colony.mines, (mine) => {
+            return !mine.miner;
+        })[0];
+        /*
+        for (let i in this.colony.memory.outposts) {
+            const outpostName = this.colony.memory.outposts[i];
+            const outpostRoom = Game.rooms[outpostName];
+            if (!outpostRoom) {
+                Traveler.travelTo(creep, new RoomPosition(25, 25, outpostName));
+            }
+        }*/
+        if (!openMine) {
+            if (this.colony.outpostMines) {
+                openMine = _.filter(this.colony.outpostMines, (mine) => {
+                    return !mine.miner;
+                })[0];
+            }
+        }
+        if (!openMine) {
+            for (let roomName in this.colony.memory.outposts) {
+                const outpostRoom = Game.rooms[roomName];
+                if (!outpostRoom) {
+                    const task = new TaskMove(roomName, creep);
+                    creep.memory.task = taskUtils.taskToString(task, roomName);
+                    return task;
+                }
+            }
+        }
+        if (!openMine) {
+            return null;
+        }
+        const task = new TaskHarvest(openMine.source, creep);
+        creep.memory.task = taskUtils.taskToString(task, openMine.source.id);
+        return task;
     }
 
     private _checkTaskData(task: ITask, creep: Creep): void {
-        const colRoomData = this.dataLoader!.getColonyRoomData();
+        const colRoomData = this.colony.taskData;
         const creepEnergy = creep.store.getUsedCapacity(RESOURCE_ENERGY);
         switch(task.type) {
             case 'supply':
                 const supplyTarget = task.target as (StructureSpawn | StructureExtension | StructureTower);
-                if (creepEnergy > supplyTarget.store.getFreeCapacity(RESOURCE_ENERGY)) {
-                    colRoomData.supplyTasks.splice(
-                        colRoomData.supplyTasks.indexOf(supplyTarget), 1);
+                if (supplyTarget.structureType === STRUCTURE_TOWER) {
+                    colRoomData.towerSupplyTasks.splice(
+                        colRoomData.towerSupplyTasks.indexOf(supplyTarget), 1
+                    );
+                } else {
+                    if (creepEnergy > supplyTarget.store.getFreeCapacity(RESOURCE_ENERGY)) {
+                        colRoomData.supplyTasks.splice(
+                            colRoomData.supplyTasks.indexOf(supplyTarget), 1);
+                    }
                 }
                 break;
             case 'repair':
@@ -310,9 +738,11 @@ export class ColonyManager extends Manager implements IColonyManager {
                         }
                     }
                     if (tower.store.getUsedCapacity(RESOURCE_ENERGY) > 800) {
-                        const rampartTask = this.dataLoader!.taskData![this.colony.room.name].rampartTasks[0];
+                        const rampartTask = this.colony.taskData.rampartTasks[0];
                         if (rampartTask) {
-                            tower.repair(rampartTask);
+                            if (this.colony.creeps.length > 8) {
+                                tower.repair(rampartTask);
+                            }
                         }
                     }
                 }

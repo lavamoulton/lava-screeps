@@ -4,6 +4,11 @@ import { Traveler } from "../utils/Traveler";
 @profile
 export abstract class Task implements ITask {
     type: string;
+    creep: Creep;
+    target?: targetType | string;
+    targetPos?: RoomPosition;
+    taskRange: number;
+    /*
     private _creep: {
         name: string;
     };
@@ -11,20 +16,22 @@ export abstract class Task implements ITask {
         id: Id<RoomObject>,
         _pos: RoomPosition,
     } | null;
-    private _taskRange: number;
+    private _taskRange: number;*/
 
-    constructor(type: string, target: targetType, creep: Creep) {
+    public constructor(type: string, target: targetType | string, creep: Creep) {
         this.type = type;
-        this._creep = {
-            name: creep.name,
-        };
-        this._target = {
-            id: target.id as Id<RoomObject>,
-            _pos: target.pos,
-        };
-        this._taskRange = 1;
+        this.creep = creep;
+        this.target = target;
+        if (this.type === 'move') {
+            this.targetPos = new RoomPosition(25, 25, this.target as string);
+        } else {
+            let target = this.target as targetType;
+            this.targetPos = target.pos;
+        }
+        this.taskRange = 1;
     }
 
+    /*
     get creep(): Creep {
         return Game.creeps[this._creep.name];
     }
@@ -49,7 +56,7 @@ export abstract class Task implements ITask {
 
     set taskRange(range: number) {
         this._taskRange = range;
-    }
+    }*/
 
     remove(): void {
         if (this.creep) {

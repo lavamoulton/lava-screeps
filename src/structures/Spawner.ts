@@ -66,6 +66,6 @@ export class Spawner extends Structure implements ISpawner {
     }
 
     run(): void {
-        this._spawnHighestPriorityCreep();
+        console.log(`Spawner result: ${this._spawnHighestPriorityCreep()}`);
     }
 }

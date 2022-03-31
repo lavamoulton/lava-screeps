@@ -5,6 +5,7 @@ import { TaskBuild } from "./Build";
 import { TaskWithdraw } from "./Withdraw";
 import { TaskPickup } from "./Pickup";
 import { TaskRepair } from "./Repair";
+import { TaskMove } from "./Move";
 
 const split = '.';
 
@@ -18,7 +19,7 @@ function taskStringToTemplate(taskString: string): TaskTemplate {
     return {
         type: splitString[0],
         creep: Game.creeps[splitString[1]],
-        targetID: splitString[2] as Id<RoomObject>,
+        targetID: splitString[2] as Id<RoomObject> | string,
     }
 }
 
@@ -27,7 +28,17 @@ function taskToString(task: ITask, targetID: string): string {
 }
 
 function createTask(taskTemplate: TaskTemplate): ITask | null {
-    const target = Game.getObjectById(taskTemplate.targetID);
+    let target = null;
+    if (taskTemplate.type === 'move') {
+        target = taskTemplate.targetID as string;
+    } else {
+        target = Game.getObjectById(taskTemplate.targetID as Id<RoomObject>);
+        console.log(`Creep: ${taskTemplate.creep.name}, target: ${target}`);
+        if (!target) {
+            taskTemplate.creep.memory.task = 'none';
+            return null;
+        }
+    }
     if (!target) {
         if (!taskTemplate.creep) {
             return null;
@@ -51,6 +62,8 @@ function createTask(taskTemplate: TaskTemplate): ITask | null {
                 return new TaskPickup(target as Resource, taskTemplate.creep);
             case 'repair':
                 return new TaskRepair(target as Structure, taskTemplate.creep);
+            case 'move':
+                return new TaskMove(target as string, taskTemplate.creep);
             default:
                 return null;
         }

@@ -17,8 +17,11 @@ export class TaskRepair extends Task {
             return false;
         }
         const target = this.target as Structure;
-        if (target.hitsMax > 20000) {
+        /*if (target.hitsMax > 100000) {
             return target.hits < 300000;
+        }*/
+        if (target.hits > 150000) {
+            return false;
         }
         return target.hits < target.hitsMax;
     }

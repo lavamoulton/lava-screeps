@@ -59,14 +59,14 @@ export class Mapper {
     scoutRoom(creep: Creep): void {
         const room = creep.room;
         if (!Memory.mapper[room.name]) {
-            const roomData = this._recordRoomData(room, creep);
+            const roomData = this.recordRoomData(room, creep);
             if (roomData) {
                 Memory.mapper[room.name] = roomData;
             }
         }
     }
 
-    private _recordRoomData(room: Room, creep: Creep): RoomMemoryData | undefined {
+    recordRoomData(room: Room, creep: Creep): RoomMemoryData | undefined {
         let colony = global.empire.colonies[creep.memory.colonyName];
         let owner;
         if (room.controller) {

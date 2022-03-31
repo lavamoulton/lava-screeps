@@ -17,7 +17,7 @@ export class TaskWithdraw extends Task {
             return false;
         }
         const target = this.target as withdrawType;
-        return target.store.getUsedCapacity(RESOURCE_ENERGY) > 0;
+        return target.store.getUsedCapacity(RESOURCE_ENERGY) > this.creep.store.getFreeCapacity(RESOURCE_ENERGY) / 2;
     }
 
     work() {

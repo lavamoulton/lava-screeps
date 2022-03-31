@@ -9,14 +9,20 @@ interface IColony {
     memory: any;
     name: string;
     room: Room;
+    outposts: Room[];
     controller: StructureController;
+    storage?: StructureStorage;
     creeps: Creep[];
     creepsByRole: { [roleName: string]: Creep[] };
     maxEnergy: number;
-    spawner: ISpawner | null;
-    towers: StructureTower[] | null;
-    mines: { [sourceID: Id<Source>]: IMine } | null;
-    manager: IColonyManager | null;
+    spawner: ISpawner;
+    towers?: StructureTower[];
+    mines?: { [sourceID: Id<Source>]: IMine };
+    outpostMines?: { [sourceID: Id<Source>]: IMine };
+    manager: IColonyManager;
+    visualizer: IColonyVisualizer;
+    taskData: roomTaskData;
+    outpostTaskData: { [name: string]: roomTaskData };
     init(): void;
     run(): void;
 }

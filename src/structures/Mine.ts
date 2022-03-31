@@ -35,6 +35,7 @@ export class Mine extends Structure implements IMine {
             this.output = outputContainer;
             this.remainingOutput = this.output.store.getUsedCapacity(RESOURCE_ENERGY);
         } else {
+            //const constructionSites = this.colony.taskData.buildTasks;
             const constructionSites: ConstructionSite[] = this.room.find(FIND_CONSTRUCTION_SITES);
             const outputConstructionSite = this.source.pos.findInRange(constructionSites, 1)[0];
             if (outputConstructionSite) {
