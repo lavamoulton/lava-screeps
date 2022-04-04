@@ -120,7 +120,7 @@ export class ColonyManager extends Manager implements IColonyManager {
     private _initCreeps(): void {
         for (let i in this.colony.creeps) {
             let creep = this.colony.creeps[i];
-            if (creep.memory.role === 'melee' || creep.memory.role === 'scout') {
+            if (creep.memory.role === 'melee' || creep.memory.role === 'scout' || creep.memory.role === 'attacker') {
                 continue;
             }
             if (creep.memory.task === 'none') {
@@ -365,7 +365,8 @@ export class ColonyManager extends Manager implements IColonyManager {
             }
 
             if (permissions.supply && data.supplyTasks.length > 0) {
-                const task = new TaskSupply(data.supplyTasks[0], creep);
+                const task = new TaskSupply(creep.pos.findClosestByRange(data.supplyTasks)!, creep);
+                //const task = new TaskSupply(data.supplyTasks[0], creep);
                 creep.memory.task = taskUtils.taskToString(task, data.supplyTasks[0].id);
                 this._checkTaskData(task, creep);
                 console.log(`Getting supply task for ${task.target}`);

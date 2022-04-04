@@ -1,15 +1,18 @@
 import { profile } from "./Profiler";
 import { Colony } from "./Colony";
-import { Mapper } from "mapper/Mapper";
+import { Mapper } from "./mapper/Mapper";
+import { Combat } from "./combat/Combat";
 
 @profile
 export class Empire implements IEmpire {
     colonies: { [colName: string]: IColony };
     mapper: IMapper;
+    combat: ICombat;
 
     constructor() {
         this.colonies = {};
         this.mapper = new Mapper();
+        this.combat = new Combat();
     }
 
     private _initMemory(): void {
@@ -36,6 +39,7 @@ export class Empire implements IEmpire {
             let colCreeps: Creep[] = creepsByColony[colName];
             colony.creeps = colCreeps;
             colony.creepsByRole = _.groupBy(colCreeps, creep => creep.memory.role) as { [roleName: string]: Creep[] };
+            this.combat.attackers = colony.creepsByRole['attacker'];
         }
     }
 
@@ -44,9 +48,11 @@ export class Empire implements IEmpire {
         this._initColonies();
         this._initCreeps();
         this.mapper.init();
+        this.combat.init();
     }
 
     run(): void {
         this.mapper.run();
+        this.combat.run();
     }
 }

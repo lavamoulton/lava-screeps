@@ -27,5 +27,5 @@ type roomTaskData = {
     buildTasks: ConstructionSite[],
     repairTasks: Structure[],
     tombstones: Tombstone[],
-    rampartTasks: StructureRampart[],
+    rampartTasks: (StructureRampart | StructureWall)[],
 }

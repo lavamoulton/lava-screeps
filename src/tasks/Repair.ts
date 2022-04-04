@@ -20,7 +20,7 @@ export class TaskRepair extends Task {
         /*if (target.hitsMax > 100000) {
             return target.hits < 300000;
         }*/
-        if (target.hits > 150000) {
+        if (target.hits > 250000) {
             return false;
         }
         return target.hits < target.hitsMax;

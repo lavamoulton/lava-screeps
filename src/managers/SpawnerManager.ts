@@ -32,7 +32,7 @@ export class SpawnerManager extends Manager {
             this._spawnEmergencyWorker();
             return;
         }
-        if (this.colony.creepsByRole['worker'].length < 2) {
+        if (this.colony.creepsByRole['worker'].length < 1) {
             this._spawnEmergencyWorker();
             return;
         }
@@ -120,6 +120,10 @@ export class SpawnerManager extends Manager {
         if (this.colony.creepsByRole['melee'].length < 0) {
             const meleeTemplate = this._getCreepTemplate('melee');
             //this.colony.spawner.queueCreep(meleeTemplate, 8);
+        }
+        if (this.colony.creepsByRole['attacker'].length < 1) {
+            const attackerTemplate = this._getCreepTemplate('attacker');
+            this.colony.spawner.queueCreep(attackerTemplate, 9);
         }
     }
 

@@ -31,7 +31,7 @@ export class DataLoader extends Manager implements DataLoader {
                 tombstones: outpost.find(FIND_TOMBSTONES, { filter: (t) =>
                     t.store.getUsedCapacity(RESOURCE_ENERGY) > 0}),
                 rampartTasks: outpost.find(FIND_STRUCTURES, { filter: (s) =>
-                    (s.structureType === STRUCTURE_RAMPART || s.structureType === STRUCTURE_WALL) && s.hits < 100000}),
+                    (s.structureType === STRUCTURE_RAMPART || s.structureType === STRUCTURE_WALL) && s.hits < 110000}),
             }
         }
         return result;
@@ -48,6 +48,32 @@ export class DataLoader extends Manager implements DataLoader {
 
     private _loadTaskData(roomName: string): roomTaskData {
         const room = Game.rooms[roomName];
+        let ramparts: (StructureRampart | StructureWall)[] = room.find(FIND_STRUCTURES, { filter: (s) =>
+            (s.structureType === STRUCTURE_RAMPART || s.structureType === STRUCTURE_WALL)
+        });
+        let rampartTasks = _.filter(ramparts, (rampart) => {
+            return rampart.hits < 110000;
+        });
+        /*
+        if (rampartTasks.length < 1) {
+            let edges: posTemplate[] = this.colony.memory.layout.edges;
+            let mappedEdges = _.map(edges, pos => new RoomPosition(pos.x, pos.y, pos.room));
+            mappedEdges.forEach((pos) => {
+                let room = Game.rooms[pos.roomName];
+                if (room) {
+                    let structures = room.lookForAt(LOOK_STRUCTURES, pos.x, pos.y);
+                    if (structures.length > 0) {
+                        structures.forEach((structure) => {
+                            if (structure.structureType === STRUCTURE_RAMPART || structure.structureType === STRUCTURE_WALL) {
+                                if (structure.hits < 200000) {
+                                    rampartTasks.push(structure as StructureRampart | StructureWall);
+                                }
+                            }
+                        })
+                    }
+                }
+            });
+        }*/
         if (room) {
             return {
                 resources: room.find(FIND_DROPPED_RESOURCES),
@@ -67,9 +93,7 @@ export class DataLoader extends Manager implements DataLoader {
                 tombstones: room.find(FIND_TOMBSTONES, { filter: (t) =>
                     t.store.getUsedCapacity(RESOURCE_ENERGY) > 0
                 }),
-                rampartTasks: room.find(FIND_STRUCTURES, { filter: (s) =>
-                    (s.structureType === STRUCTURE_RAMPART || s.structureType === STRUCTURE_WALL) && s.hits < 100000
-                }),
+                rampartTasks: rampartTasks,
             }
         } else {
             return {

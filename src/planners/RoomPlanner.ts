@@ -1,7 +1,6 @@
 import { profile } from "../Profiler";
 import { Traveler } from "utils/Traveler";
 import { bunker } from "../templates/roomBunker";
-import { formatWithOptions } from "util";
 
 @profile
 export class RoomPlanner implements IRoomPlanner {
@@ -53,6 +52,12 @@ export class RoomPlanner implements IRoomPlanner {
         if (!colMemory.layout.storage) {
             colMemory.layout.storage = [];
         }
+        if (!colMemory.layout.links) {
+            colMemory.layout.links = [];
+        }
+        if (!colMemory.layout.edges) {
+            colMemory.layout.edges = [];
+        }
         if (this.colony.spawner) {
             let spawn = this.colony.spawner.spawns[0];
             let anchor = spawn.pos;
@@ -68,6 +73,8 @@ export class RoomPlanner implements IRoomPlanner {
             colMemory.layout.connections = this._getBuildingPositions('connections', dx, dy, bunkerLayout);
             colMemory.layout.ramparts = this._getBuildingPositions('rampart', dx, dy, bunkerLayout);
             colMemory.layout.storage = this._getBuildingPositions('storage', dx, dy, bunkerLayout);
+            colMemory.layout.links = this._getBuildingPositions('link', dx, dy, bunkerLayout);
+            colMemory.layout.edges = this._getBuildingPositions('edge', dx, dy, bunkerLayout);
         }
     }
 
@@ -242,11 +249,9 @@ export class RoomPlanner implements IRoomPlanner {
                         mappedPos.forEach((pos => {
                             let room = Game.rooms[pos.roomName];
                             if (room) {
-                                console.log(`--- Calling room visual circle ---`);
                                 new RoomVisual(room.name).circle(pos.x, pos.y, { radius: .45, fill: "transparent", stroke: "red", strokeWidth: .15, opacity: 1});
                                 room.createConstructionSite(pos.x, pos.y, STRUCTURE_ROAD);
                             }
-                            //room.createConstructionSite(pos.x, pos.y, STRUCTURE_ROAD);
                         }));
                     }
                     colMemory[`outpostMineRoad${mine.source.id}`] = this._getMineRoad(mine);
@@ -276,6 +281,9 @@ export class RoomPlanner implements IRoomPlanner {
         }
         if (buildingName === 'storage') {
             return STRUCTURE_STORAGE;
+        }
+        if (buildingName === 'links') {
+            return STRUCTURE_LINK;
         }
         return null;
     }

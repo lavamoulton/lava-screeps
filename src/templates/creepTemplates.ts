@@ -8,6 +8,7 @@ const CREEP_PRIORITIES: { [name: string]: number } = {
     'builder': 7,
     'melee': 8,
     'scout': 9,
+    'attacker': 10,
 };
 
 const ROLE_TEMPLATES: { [name: string]: BodyPartConstant[] } = {
@@ -19,23 +20,23 @@ const ROLE_TEMPLATES: { [name: string]: BodyPartConstant[] } = {
 
 const ROLE_BODY_TEMPLATES: { [name: string]: roleTemplate} = {
     'worker': {
-        'prefix': [],
-        'body': [WORK, CARRY, MOVE, MOVE],
+        'prefix': [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
+        'body': [CARRY, MOVE],
         'suffix': [],
     },
     'miner': {
-        'prefix': [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE],
+        'prefix': [WORK, WORK, WORK, WORK, WORK, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE],
         'body': [],
         'suffix': [MOVE, MOVE, MOVE, MOVE],
     },
     'builder': {
-        'prefix': [],
-        'body': [WORK, CARRY, MOVE, MOVE],
+        'prefix': [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
+        'body': [CARRY, MOVE],
         'suffix': [],
     },
     'upgrader': {
-        'prefix': [WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE],
-        'body': [WORK, CARRY, MOVE, MOVE],
+        'prefix': [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
+        'body': [CARRY, MOVE],
         'suffix': [],
     },
     'scout': {
@@ -50,6 +51,11 @@ const ROLE_BODY_TEMPLATES: { [name: string]: roleTemplate} = {
     },
     'melee': {
         'prefix': [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, ATTACK, ATTACK, ATTACK, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
+        'body': [],
+        'suffix': [],
+    },
+    'attacker': {
+        'prefix': [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK],
         'body': [],
         'suffix': [],
     }
@@ -124,7 +130,7 @@ const TASK_PERMISSIONS: { [role: string]: { [task: string]: boolean } } = {
         'pickup': true,
         'remotepickup': true,
         'remotebuild': false,
-        'remoterepair': false,
+        'remoterepair': true,
         'storage': false,
         'mines': true,
         'remoteMines': true,
