@@ -66,7 +66,7 @@ export class SpawnerManager extends Manager {
     }
 
     private _queueCreeps(): void {
-        if (this.colony.creepsByRole['worker'].length < 2) {
+        if (this.colony.creepsByRole['worker'].length < 3) {
             const workerTemplate = this._getCreepTemplate('worker');
             this.colony.spawner?.queueCreep(workerTemplate, 1);
         }
@@ -109,21 +109,31 @@ export class SpawnerManager extends Manager {
             const upgraderTemplate = this._getCreepTemplate('upgrader');
             this.colony.spawner?.queueCreep(upgraderTemplate, 3);
         }
-        if (this.colony.creepsByRole['miner'].length < 4) {
+        if (this.colony.creepsByRole['miner'].length < 7) {
             const minerTemplate = this._getCreepTemplate('miner');
             this.colony.spawner.queueCreep(minerTemplate, 6);
         }
-        if (this.colony.creepsByRole['scout'].length < 0) {
+        if (this.colony.creepsByRole['scout'].length < 2) {
             const scoutTemplate = this._getCreepTemplate('scout');
-            this.colony.spawner?.queueCreep(scoutTemplate, 8);
+            this.colony.spawner?.queueCreep(scoutTemplate, 7);
         }
         if (this.colony.creepsByRole['melee'].length < 0) {
             const meleeTemplate = this._getCreepTemplate('melee');
             //this.colony.spawner.queueCreep(meleeTemplate, 8);
         }
-        if (this.colony.creepsByRole['attacker'].length < 1) {
+        if (this.colony.creepsByRole['attacker'].length < 0) {
             const attackerTemplate = this._getCreepTemplate('attacker');
             this.colony.spawner.queueCreep(attackerTemplate, 9);
+        }
+        if (this.colony.defcon < 5 || this.colony.creeps.length > 14) {
+            if (this.colony.creepsByRole['defender'].length < 0) {
+                const defenderTemplate = this._getCreepTemplate('defender');
+                this.colony.spawner.queueCreep(defenderTemplate, 1);
+            }
+        }
+        if (this.colony.creepsByRole['defender'].length < 0) {
+            const defenderTemplate = this._getCreepTemplate('defender');
+            this.colony.spawner.queueCreep(defenderTemplate, 5)
         }
     }
 

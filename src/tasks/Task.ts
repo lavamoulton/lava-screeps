@@ -88,6 +88,15 @@ export abstract class Task implements ITask {
             }
             return workResult;
         } else {
+            let colName = this.creep.memory.colonyName;
+            let colony = global.empire.colonies[colName];
+            if (colony) {
+                if (colony.memory.enemyRooms.length > 0) {
+                    if (this.targetPos.roomName in colony.memory.enemyRooms) {
+                        this.remove();
+                    }
+                }
+            }
             this.move();
         }
     }

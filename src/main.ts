@@ -1,6 +1,7 @@
 import { Empire } from "Empire";
 import { ErrorMapper } from "utils/ErrorMapper";
 import * as Profiler from "./Profiler";
+import { logging, LogEntry, LogManager } from './utils/logging/logging';
 
 declare global {
   /*
@@ -38,16 +39,25 @@ declare global {
 
   var empire: IEmpire;
   var Profiler: Profiler;
+  //var logger: LogManager;
 }
 
 global.Profiler = Profiler.init();
+/*global.logger = logging
+  .configure({
+    minLevels: {
+      '': 'info',
+    }
+  })
+  .registerConsoleLogger();*/
 
 global.empire = new Empire();
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
 export const loop = ErrorMapper.wrapLoop(() => {
-  console.log(`Current game tick is ${Game.time}`);
+  //const logger = global.logger.getLogger('main');
+  //logger.info(`Current game tick is ${Game.time}`);
 
   let empire = global.empire;
 

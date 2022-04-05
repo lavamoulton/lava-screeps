@@ -19,12 +19,13 @@ export class DataLoader extends Manager implements DataLoader {
         for (let i in this.colony.outposts) {
             let outpost = this.colony.outposts[i];
             result[outpost.name] = {
+                enemies: outpost.find(FIND_HOSTILE_CREEPS),
                 resources: outpost.find(FIND_DROPPED_RESOURCES),
                 supplyTasks: [],
                 towerSupplyTasks: [],
                 buildTasks: outpost.find(FIND_CONSTRUCTION_SITES),
                 repairTasks: outpost.find(FIND_STRUCTURES, { filter: (s) =>
-                    ((s.hits+200) < s.hitsMax) &&
+                    ((s.hits+500) < s.hitsMax) &&
                     (s.structureType !== STRUCTURE_RAMPART &&
                         s.structureType !== STRUCTURE_WALL
                 )}),
@@ -52,7 +53,7 @@ export class DataLoader extends Manager implements DataLoader {
             (s.structureType === STRUCTURE_RAMPART || s.structureType === STRUCTURE_WALL)
         });
         let rampartTasks = _.filter(ramparts, (rampart) => {
-            return rampart.hits < 110000;
+            return rampart.hits < 150000;
         });
         /*
         if (rampartTasks.length < 1) {
@@ -76,6 +77,7 @@ export class DataLoader extends Manager implements DataLoader {
         }*/
         if (room) {
             return {
+                enemies: room.find(FIND_HOSTILE_CREEPS),
                 resources: room.find(FIND_DROPPED_RESOURCES),
                 supplyTasks: room.find(FIND_STRUCTURES, {filter: (s) =>
                     (s.structureType === STRUCTURE_EXTENSION ||
@@ -97,6 +99,7 @@ export class DataLoader extends Manager implements DataLoader {
             }
         } else {
             return {
+                enemies: [],
                 resources: [],
                 supplyTasks: [],
                 towerSupplyTasks: [],

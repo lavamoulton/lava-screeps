@@ -6,6 +6,8 @@ import { TaskWithdraw } from "./Withdraw";
 import { TaskPickup } from "./Pickup";
 import { TaskRepair } from "./Repair";
 import { TaskMove } from "./Move";
+import { TaskClaim } from "./Claim";
+import { TaskReserve } from "./Reserve";
 
 const split = '.';
 
@@ -64,6 +66,10 @@ function createTask(taskTemplate: TaskTemplate): ITask | null {
                 return new TaskRepair(target as Structure, taskTemplate.creep);
             case 'move':
                 return new TaskMove(target as string, taskTemplate.creep);
+            case 'claim':
+                return new TaskClaim(target as StructureController, taskTemplate.creep);
+            case 'reserve':
+                return new TaskReserve(target as StructureController, taskTemplate.creep);
             default:
                 return null;
         }

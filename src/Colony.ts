@@ -9,6 +9,7 @@ import { DataLoader } from "managers/DataLoader";
 export class Colony implements IColony {
     name: string;
     room: Room;
+    defcon: number;
     outposts: Room[];
     controller: StructureController;
     storage?: StructureStorage;
@@ -30,6 +31,7 @@ export class Colony implements IColony {
         }
         this.name = name;
         this.room = room;
+        this.defcon = 5;
         this.outposts = this._loadOutposts();
         this.controller = this.room.controller!;
         this.creeps = [];
@@ -85,7 +87,7 @@ export class Colony implements IColony {
         let outposts: { [name: string]: number } = {};
         let outpostRanges = [];
         let numSources = 0;
-        let maxSources = 3;
+        let maxSources = 5;
         for (let i in Memory.mapper) {
             let roomMemoryData = Memory.mapper[i];
             if (this.name === roomMemoryData.colony) {
@@ -162,7 +164,47 @@ export class Colony implements IColony {
         return cVisualizer;
     }
 
+    private _setDefconLevel(): void {
+        if (!this.memory.enemyRooms) {
+            this.memory.enemyRooms = [];
+        }
+        if (this.memory.enemyRooms.length > 0) {
+            this.defcon = 4;
+            return;
+        }
+        if (this.taskData.enemies.length > 0) {
+            this.defcon = 3;
+            return;
+        }
+        for (let i in this.outpostTaskData) {
+            let data = this.outpostTaskData[i];
+            if (data.enemies.length > 0) {
+                this.memory.enemyRooms.push(i);
+                this.defcon = 4;
+                return;
+            }
+        }
+    }
+
+    private _checkEnemyRooms(): void {
+        for (let i in this.memory.enemyRooms) {
+            let roomName = this.memory.enemyRooms[i];
+            let room = Game.rooms[roomName];
+            if (room) {
+                let enemies = room.find(FIND_HOSTILE_CREEPS);
+                if (enemies) {
+                    if (enemies.length < 1) {
+                        this.memory.enemyRooms.slice(i, 1);
+                    }
+                }
+            }
+        }
+    }
+
     init(): void {
+        if (Game.time % 360 === 0) {
+            this.memory.storage = false;
+        }
         let storageCheck: StructureStorage[] = this.room.find(FIND_STRUCTURES, { filter: (s) =>
             s.structureType === STRUCTURE_STORAGE });
         if (storageCheck.length > 0) {
@@ -170,6 +212,7 @@ export class Colony implements IColony {
         }
         this.spawner.init();
         this.manager.init();
+        this._setDefconLevel();
         this.mines = this._initMines();
         this._findOutposts();
         this.outpostMines = this._initOutpostMines();
@@ -193,6 +236,7 @@ export class Colony implements IColony {
                 mine.run();
             });
         }
+        this._checkEnemyRooms();
         if (Game.cpu.getUsed() < 10) {
             this.visualizer?.run();
         }

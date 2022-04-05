@@ -21,6 +21,7 @@ interface IDataLoader extends IManager {
 }
 
 type roomTaskData = {
+    enemies: Creep[],
     resources: Resource[],
     supplyTasks: (StructureSpawn | StructureExtension)[],
     towerSupplyTasks: StructureTower[],

@@ -9,6 +9,7 @@ interface IColony {
     memory: any;
     name: string;
     room: Room;
+    defcon: number;
     outposts: Room[];
     controller: StructureController;
     storage?: StructureStorage;

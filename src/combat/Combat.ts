@@ -5,15 +5,17 @@ import { profile } from "../Profiler";
 export class Combat implements ICombat {
 
     attackers: Creep[];
+    defenders: Creep[];
     private _targetRooms: string[];
 
     constructor() {
         this.attackers = [];
+        this.defenders = [];
         this._targetRooms = [];
     }
 
     init(): void {
-        const targetRooms = ['E7S12'];
+        const targetRooms = ['E7S11'];
         for (let i in targetRooms) {
             this._targetRooms.push(targetRooms[i]);
         }
@@ -26,6 +28,7 @@ export class Combat implements ICombat {
             });
             return;
         }*/
+        this._runDefenders();
         if (this._targetRooms.length > 0) {
             let room = Game.rooms[this._targetRooms[0]];
             if (room) {
@@ -45,6 +48,9 @@ export class Combat implements ICombat {
                                 continue;
                             } else {
                                 attacker.rangedAttack(tower);
+                                if (attacker.pos.getRangeTo(tower) > 1) {
+                                    Traveler.travelTo(attacker, tower);
+                                }
                                 continue;
                             }
                         }
@@ -55,6 +61,9 @@ export class Combat implements ICombat {
                                 continue;
                             } else {
                                 attacker.rangedAttack(hostile);
+                                if (attacker.pos.getRangeTo(hostile) > 1) {
+                                    Traveler.travelTo(attacker, hostile);
+                                }
                                 continue;
                             }
                         }
@@ -65,6 +74,9 @@ export class Combat implements ICombat {
                                 continue;
                             } else {
                                 attacker.rangedAttack(structure);
+                                if (attacker.pos.getRangeTo(structure) > 1) {
+                                    Traveler.travelTo(attacker, structure);
+                                }
                                 continue;
                             }
                         }
@@ -93,6 +105,49 @@ export class Combat implements ICombat {
                     } else {*/
                         Traveler.travelTo(attacker, new RoomPosition(25, 25, this._targetRooms[0]));
                     //}
+                }
+            }
+        }
+    }
+
+    private _runDefenders(): void {
+        if (!this.defenders) {
+            return;
+        }
+        if (this.defenders.length > 0) {
+            for (let i in this.defenders) {
+                let defender = this.defenders[i];
+                let colony = global.empire.colonies[defender.memory.colonyName];
+                if (colony) {
+                    if (colony.defcon = 5) {
+                        Traveler.travelTo(defender, new RoomPosition(15, 20, 'E7S12'));
+                        continue;
+                    } else {
+                        let target: Creep | null = null;
+                        if (colony.taskData.enemies.length > 0) {
+                            target = colony.taskData.enemies[0];
+                        } else {
+                            for (let i in colony.outpostTaskData) {
+                                if (target) {
+                                    continue;
+                                }
+                                let data = colony.outpostTaskData[i];
+                                if (data.enemies.length > 0) {
+                                    target = data.enemies[0];
+                                    continue;
+                                }
+                            }
+                        }
+                        if (target) {
+                            if (defender.pos.getRangeTo(target) > 1) {
+                                Traveler.travelTo(defender, target);
+                                continue;
+                            } else {
+                                defender.attack(target);
+                                continue;
+                            }
+                        }
+                    }
                 }
             }
         }

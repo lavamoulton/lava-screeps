@@ -6,9 +6,10 @@ const CREEP_PRIORITIES: { [name: string]: number } = {
     'worker': 5,
     'upgrader': 6,
     'builder': 7,
-    'melee': 8,
-    'scout': 9,
-    'attacker': 10,
+    'defender': 8,
+    'melee': 12,
+    'scout': 10,
+    'attacker': 11,
 };
 
 const ROLE_TEMPLATES: { [name: string]: BodyPartConstant[] } = {
@@ -40,8 +41,8 @@ const ROLE_BODY_TEMPLATES: { [name: string]: roleTemplate} = {
         'suffix': [],
     },
     'scout': {
-        'prefix': [CLAIM, MOVE, MOVE],
-        'body': [],
+        'prefix': [],
+        'body': [CLAIM, MOVE],
         'suffix': [],
     },
     'hauler': {
@@ -56,6 +57,11 @@ const ROLE_BODY_TEMPLATES: { [name: string]: roleTemplate} = {
     },
     'attacker': {
         'prefix': [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK],
+        'body': [],
+        'suffix': [],
+    },
+    'defender': {
+        'prefix': [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK],
         'body': [],
         'suffix': [],
     }
@@ -130,7 +136,7 @@ const TASK_PERMISSIONS: { [role: string]: { [task: string]: boolean } } = {
         'pickup': true,
         'remotepickup': true,
         'remotebuild': false,
-        'remoterepair': true,
+        'remoterepair': false,
         'storage': false,
         'mines': true,
         'remoteMines': true,

@@ -1,5 +1,8 @@
 import { profile } from "../Profiler";
 import { Traveler } from "../utils/Traveler";
+import { taskUtils } from "../tasks/taskUtils";
+import { TaskClaim } from "tasks/Claim";
+import { TaskReserve } from "tasks/Reserve";
 
 @profile
 export class Mapper {
@@ -118,19 +121,75 @@ export class Mapper {
                 return;
             }
             if (scout.spawning) { return; }
-            console.log(scout);
+            /*console.log(scout);
             if (this._scouts.length > 0 && !scout) {
                 this._scouts.splice(this._scouts.indexOf(scout), 1);
-            }
+            }*/
             if (scout.memory.task === 'none') {
+                const colony = global.empire.colonies[scout.memory.colonyName];
+                console.log(scout.memory.colonyName);
+                if (colony) {
+                    for (let i in colony.outposts) {
+                        let outpost = colony.outposts[i];
+                        if (outpost.controller) {
+                            if (outpost.controller.reservation) {
+                                if (outpost.controller.reservation.ticksToEnd < 3000) {
+                                    const task = new TaskReserve(outpost.controller, scout);
+                                    scout.memory.task = taskUtils.taskToString(task, outpost.controller.id);
+                                    //const task = new TaskClaim(outpost.controller, scout);
+                                    //scout.memory.task = taskUtils.taskToString(task, outpost.controller.id);
+                                    break;
+                                }
+                            } else {
+                                const task = new TaskReserve(outpost.controller, scout);
+                                scout.memory.task = taskUtils.taskToString(task, outpost.controller.id);
+                                break;
+                            }
+                        }
+                    }
+                }
+                /*
                 const roomName = this._getScoutTarget(scout, scout.room.name);
                 if (roomName) {
                     scout.memory.task = 'explore.' + scout.name + '.' + roomName;
                 } else {
                     Traveler.travelTo(scout, new RoomPosition(6, 6, scout.room.name));
-                }
+                }*/
             }
+            if (scout.memory.task.startsWith('reserve')) {
+                const taskTemplate = taskUtils.taskStringToTemplate(scout.memory.task);
+                const task = taskUtils.createTask(taskTemplate);
+                if (!task) {
+                    scout.memory.task = 'none';
+                    continue;
+                }
+                if (!task.isValidTarget() || !task.isValidTask()) {
+                    task.remove();
+                    continue;
+                }
+                task.step();
+                continue;
+            }
+            /*if (scout.memory.task.startsWith('claim')) {
+                const taskTemplate = taskUtils.taskStringToTemplate(scout.memory.task);
+                const task = taskUtils.createTask(taskTemplate);
+                if (!task) {
+                    scout.memory.task = 'none';
+                    continue;
+                }
+                if (!task.isValidTarget() || !task.isValidTask()) {
+                    task.remove();
+                    continue;
+                }
+                task.step();
+            }*/
             if (scout.memory.task.startsWith('explore')) {
+                scout.memory.task = 'none';
+                continue;
+                /*
+                if (Game.time%7 === 0) {
+                    this.scoutRoom(scout);
+                }
                 const splitString = scout.memory.task.split('.');
                 const roomName = splitString[2];
                 if (Traveler.isExit(scout.pos)) {
@@ -155,7 +214,7 @@ export class Mapper {
                     console.log('These are equal wtf game');
                     this.scoutRoom(scout);
                     scout.memory.task = 'none';
-                }
+                }*/
             }
         }
     }

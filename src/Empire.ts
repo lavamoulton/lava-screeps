@@ -40,6 +40,7 @@ export class Empire implements IEmpire {
             colony.creeps = colCreeps;
             colony.creepsByRole = _.groupBy(colCreeps, creep => creep.memory.role) as { [roleName: string]: Creep[] };
             this.combat.attackers = colony.creepsByRole['attacker'];
+            this.combat.defenders = colony.creepsByRole['defender'];
         }
     }
 
