@@ -4,18 +4,21 @@ import { Spawner } from './structures/Spawner';
 import { Mine } from 'structures/Mine';
 import { ColonyVisualizer } from "visuals/ColonyVisualizer";
 import { DataLoader } from "managers/DataLoader";
+import { globalAgent } from "http";
 
 @profile
 export class Colony implements IColony {
     name: string;
     room: Room;
     defcon: number;
+    baby: boolean;
+    parent: boolean;
     outposts: Room[];
     controller: StructureController;
     storage?: StructureStorage;
     creeps: Creep[];
     creepsByRole: { [roleName: string]: Creep[] };
-    spawner: ISpawner;
+    spawner: ISpawner | null;
     mines?: { [sourceID: Id<Source>]: IMine };
     outpostMines?: { [sourceID: Id<Source>]: IMine };
     towers?: StructureTower[];
@@ -23,6 +26,7 @@ export class Colony implements IColony {
     visualizer: IColonyVisualizer;
     taskData: roomTaskData;
     outpostTaskData: { [name: string]: roomTaskData };
+    colonyTaskData: colonyTaskData;
     private _dataLoader: IDataLoader;
 
     constructor(name: string, room: Room) {
@@ -34,12 +38,19 @@ export class Colony implements IColony {
         this.defcon = 5;
         this.outposts = this._loadOutposts();
         this.controller = this.room.controller!;
+        if (Object.values(global.empire.colonies).length > 1 && this.controller.level < 3) {
+            this.baby = true;
+        } else {
+            this.baby = false;
+        }
+        this.parent = false;
         this.creeps = [];
         this.creepsByRole = {};
         this._dataLoader = new DataLoader(this);
         this._dataLoader.init();
         this.taskData = this._loadTaskData();
         this.outpostTaskData = this._loadOutpostTaskData();
+        this.colonyTaskData = this._loadColonyTaskData();
         this.spawner = this._initSpawner();
         this.manager = this._initColonyManager();
         this.visualizer = this._initColonyVisualizer();
@@ -80,6 +91,10 @@ export class Colony implements IColony {
         return this._dataLoader.getRemoteRoomData();
     }
 
+    private _loadColonyTaskData(): colonyTaskData {
+        return this._dataLoader.getColonyTaskData();
+    }
+
     private _findOutposts(): { [name: string]: number } {
         if (!this.memory['outposts']) {
             this.memory['outposts'] = {};
@@ -115,9 +130,12 @@ export class Colony implements IColony {
         return outposts;
     }
 
-    private _initSpawner(): ISpawner {
+    private _initSpawner(): ISpawner | null {
         let spawn: StructureSpawn = this.room.find(FIND_STRUCTURES, {filter: (s) =>
             s.structureType == STRUCTURE_SPAWN})[0] as StructureSpawn;
+        if (!spawn) {
+            return null;
+        }
         let spawner = new Spawner(spawn.id, this.room, this);
         //spawner.init();
         return spawner;
@@ -159,7 +177,7 @@ export class Colony implements IColony {
     }
 
     private _initColonyVisualizer(): IColonyVisualizer {
-        let cVisualizer = new ColonyVisualizer(this, this.taskData, this.outpostTaskData);
+        let cVisualizer = new ColonyVisualizer(this, this.taskData, this.outpostTaskData, this.colonyTaskData);
         //cVisualizer.init();
         return cVisualizer;
     }
@@ -194,7 +212,7 @@ export class Colony implements IColony {
                 let enemies = room.find(FIND_HOSTILE_CREEPS);
                 if (enemies) {
                     if (enemies.length < 1) {
-                        this.memory.enemyRooms.slice(i, 1);
+                        this.memory.enemyRooms.splice(i, 1);
                     }
                 }
             }
@@ -210,20 +228,34 @@ export class Colony implements IColony {
         if (storageCheck.length > 0) {
             this.storage = storageCheck[0];
         }
+        console.log(`${this.spawner}`);
+        if (!this.spawner) {
+            return;
+        }
         this.spawner.init();
         this.manager.init();
         this._setDefconLevel();
         this.mines = this._initMines();
-        this._findOutposts();
-        this.outpostMines = this._initOutpostMines();
+        if (!this.baby) {
+            this._findOutposts();
+            this.outpostMines = this._initOutpostMines();
+        }
         this.towers = this.room.find(FIND_MY_STRUCTURES, { filter: (s) =>
             (s.structureType === STRUCTURE_TOWER)
         });
         this.visualizer.init();
-
+        for (let i in global.empire.colonies) {
+            let colony = global.empire.colonies[i];
+            if (colony.baby && this.controller.level > 4) {
+                this.parent = true;
+            }
+        }
     }
 
     run(): void {
+        if (!this.spawner) {
+            return;
+        }
         this.manager.run();
         this.spawner.run();
         if (this.mines) {

@@ -48,6 +48,9 @@ export class SpawnerManager extends Manager {
     }
 
     private _loadRoleBodyTemplates(): { [name: string]: roleTemplate } {
+        if (this.colony.baby) {
+            return creepTemplates.BABY_BODY_TEMPLATES;
+        }
         return creepTemplates.ROLE_BODY_TEMPLATES;
     }
 
@@ -80,18 +83,18 @@ export class SpawnerManager extends Manager {
             if (this.colony.storage) {
                 if (this.colony.creepsByRole['hauler'].length < numMines) {
                     const haulerTemplate = this._getCreepTemplate('hauler');
-                    this.colony.spawner.queueCreep(haulerTemplate, 5);
+                    this.colony.spawner?.queueCreep(haulerTemplate, 5);
                 }
             }
             if (this.colony.outpostMines) {
                 let numOutpostMines = Object.keys(this.colony.outpostMines).length;
                 if (this.colony.creepsByRole['miner'].length < numMines + numOutpostMines) {
                     const minerTemplate = this._getCreepTemplate('miner');
-                    this.colony.spawner.queueCreep(minerTemplate, 6);
+                    this.colony.spawner?.queueCreep(minerTemplate, 6);
                 }
-                if (this.colony.creepsByRole['hauler'].length < (numMines + numOutpostMines - 1)) {
+                if (this.colony.creepsByRole['hauler'].length < (numMines + numOutpostMines - 2)) {
                     const haulerTemplate = this._getCreepTemplate('hauler');
-                    this.colony.spawner.queueCreep(haulerTemplate, 7);
+                    this.colony.spawner?.queueCreep(haulerTemplate, 7);
                 }
             }
         }
@@ -111,7 +114,7 @@ export class SpawnerManager extends Manager {
         }
         if (this.colony.creepsByRole['miner'].length < 7) {
             const minerTemplate = this._getCreepTemplate('miner');
-            this.colony.spawner.queueCreep(minerTemplate, 6);
+            this.colony.spawner?.queueCreep(minerTemplate, 6);
         }
         if (this.colony.creepsByRole['scout'].length < 2) {
             const scoutTemplate = this._getCreepTemplate('scout');
@@ -123,17 +126,37 @@ export class SpawnerManager extends Manager {
         }
         if (this.colony.creepsByRole['attacker'].length < 0) {
             const attackerTemplate = this._getCreepTemplate('attacker');
-            this.colony.spawner.queueCreep(attackerTemplate, 9);
+            this.colony.spawner?.queueCreep(attackerTemplate, 9);
         }
         if (this.colony.defcon < 5 || this.colony.creeps.length > 14) {
             if (this.colony.creepsByRole['defender'].length < 0) {
                 const defenderTemplate = this._getCreepTemplate('defender');
-                this.colony.spawner.queueCreep(defenderTemplate, 1);
+                this.colony.spawner?.queueCreep(defenderTemplate, 1);
             }
         }
-        if (this.colony.creepsByRole['defender'].length < 0) {
+        if (this.colony.creepsByRole['defender'].length < 1 && this.colony.creepsByRole['miner'].length > 3) {
             const defenderTemplate = this._getCreepTemplate('defender');
-            this.colony.spawner.queueCreep(defenderTemplate, 5)
+            this.colony.spawner?.queueCreep(defenderTemplate, 5)
+        }
+        if (this.colony.parent) {
+            let baby;
+            for (let i in global.empire.colonies) {
+                let colony = global.empire.colonies[i];
+                if (colony.baby) {
+                    baby = colony;
+                }
+            }
+            if (baby) {
+                if (baby.creepsByRole['miner'].length < 2) {
+                    const minerTemplate = this._getCreepTemplate('miner');
+                    minerTemplate.memory.colonyName = baby.name;
+                    this.colony.spawner?.queueCreep(minerTemplate, 6);
+                }
+                if (baby.creepsByRole['worker'].length < 1) {
+                    const supportTemplate = this._getCreepTemplate('support');
+                    this.colony.spawner?.queueCreep(supportTemplate, 5);
+                }
+            }
         }
     }
 

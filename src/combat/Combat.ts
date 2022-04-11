@@ -83,8 +83,14 @@ export class Combat implements ICombat {
                     }
                 }
             } else {
+                if (this.attackers.length < 1) {
+                    return;
+                }
                 for (let i in this.attackers) {
                     let attacker = this.attackers[i];
+                    if (!attacker) {
+                        return;
+                    }
                     if (attacker.spawning) {
                         continue;
                     }
@@ -117,6 +123,26 @@ export class Combat implements ICombat {
         if (this.defenders.length > 0) {
             for (let i in this.defenders) {
                 let defender = this.defenders[i];
+                if (!defender) {
+                    return;
+                }
+                let hostileTarget = null;
+                for (let i in Game.rooms) {
+                    let hostiles = Game.rooms[i].find(FIND_HOSTILE_CREEPS);
+                    if (hostiles.length > 0) {
+                        hostileTarget = hostiles[0];
+                        break;
+                    }
+                }
+                if (hostileTarget) {
+                    if (defender.pos.getRangeTo(hostileTarget) > 1) {
+                        Traveler.travelTo(defender, hostileTarget);
+                        continue;
+                    } else {
+                        defender.attack(hostileTarget);
+                        continue;
+                    }
+                }
                 let colony = global.empire.colonies[defender.memory.colonyName];
                 if (colony) {
                     if (colony.defcon = 5) {

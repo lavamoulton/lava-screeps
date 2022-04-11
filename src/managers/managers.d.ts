@@ -18,6 +18,7 @@ interface IDataLoader extends IManager {
     taskData?: { [roomName: string]: roomTaskData };
     getColonyRoomData(): roomTaskData;
     getRemoteRoomData(): { [name: string]: roomTaskData };
+    getColonyTaskData(): colonyTaskData;
 }
 
 type roomTaskData = {
@@ -29,4 +30,13 @@ type roomTaskData = {
     repairTasks: Structure[],
     tombstones: Tombstone[],
     rampartTasks: (StructureRampart | StructureWall)[],
+}
+
+type colonyTaskData = {
+    enemies: Creep[],
+    reservations: StructureController[],
+    claims: Room[],
+    outpostOutputs: StructureContainer[],
+    defenseRooms: Room[],
+    offenseRooms: Room[],
 }

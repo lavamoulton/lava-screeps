@@ -1,3 +1,4 @@
+import { off } from "process";
 import { profile } from "../Profiler";
 import { Manager } from "./Manager";
 
@@ -38,6 +39,55 @@ export class DataLoader extends Manager implements DataLoader {
         return result;
     }
 
+    getColonyTaskData(): colonyTaskData {
+        let rooms: Room[] = [];
+        let reservations: StructureController[] = [];
+        let defenseRooms: Room[] = [];
+        rooms.push(this.colony.room);
+        _.forEach(this.colony.outposts, (outpost) => {
+            rooms.push(outpost);
+            if (outpost.controller) {
+                if (outpost.controller.reservation) {
+                    if (outpost.controller.reservation.ticksToEnd < 2000) {
+                        reservations.push(outpost.controller);
+                    }
+                } else {
+                    reservations.push(outpost.controller);
+                }
+            }
+        });
+        let colHostiles: Creep[] = [];
+        for (let room of rooms) {
+            let hostiles = room.find(FIND_HOSTILE_CREEPS);
+            if (hostiles.length > 0) {
+                colHostiles = colHostiles.concat(hostiles);
+                if (!defenseRooms.includes(room)) {
+                    defenseRooms.push(room);
+                }
+            }
+        }
+        let claims: Room[] = [];
+        let outpostOutputs: StructureContainer[] = [];
+        if (this.colony.outpostMines) {
+            _.forEach(this.colony.outpostMines, (mine) => {
+                if (mine.remainingOutput > 500) {
+                    if (mine.output) {
+                        outpostOutputs.push(mine.output);
+                    }
+                }
+            })
+        }
+        let offenseRooms: Room[] = [];
+        return {
+            enemies: colHostiles,
+            reservations: reservations,
+            claims: claims,
+            outpostOutputs: outpostOutputs,
+            defenseRooms: defenseRooms,
+            offenseRooms: offenseRooms,
+        }
+    }
+
     init(): void {
         this.taskData = {};
         this.taskData[this.colony.room.name] = this._loadTaskData(this.colony.room.name);
@@ -53,7 +103,7 @@ export class DataLoader extends Manager implements DataLoader {
             (s.structureType === STRUCTURE_RAMPART || s.structureType === STRUCTURE_WALL)
         });
         let rampartTasks = _.filter(ramparts, (rampart) => {
-            return rampart.hits < 150000;
+            return rampart.hits < 200000;
         });
         /*
         if (rampartTasks.length < 1) {

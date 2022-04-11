@@ -4,3 +4,9 @@ interface IMapper {
     init(): void;
     run(): void;
 }
+
+interface IObserver {
+    memory: any;
+    init(): void;
+    run(): void;
+}

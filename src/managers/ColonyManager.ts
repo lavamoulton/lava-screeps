@@ -39,7 +39,7 @@ export class ColonyManager extends Manager implements IColonyManager {
         this._initCreeps();
         if (Game.time % 60 === 0) {
             this.roomPlanner = new RoomPlanner(this.colony);
-            this.roomPlanner.init();
+            //this.roomPlanner.init();
         }
     }
 
@@ -48,7 +48,7 @@ export class ColonyManager extends Manager implements IColonyManager {
         this._runCreeps();
         this._runTowers();
         if (Game.time % 60 === 0) {
-            this.roomPlanner?.run();
+            //this.roomPlanner?.run();
         }
     }
 
@@ -277,6 +277,7 @@ export class ColonyManager extends Manager implements IColonyManager {
                             if (droppedResource.amount > creep.store.getFreeCapacity(RESOURCE_ENERGY)) {
                                 const task = new TaskPickup(droppedResource, creep);
                                 creep.memory.task = taskUtils.taskToString(task, droppedResource.id);
+                                roomData.resources.splice(roomData.resources.indexOf(droppedResource), 1);
                                 console.log(`Picking up dropped resource, lowering dropped resource amount ${droppedResource.amount}`);
                                 //droppedResource.amount -= creep.store.getFreeCapacity(RESOURCE_ENERGY);
                                 console.log(`New dropped resource amount ${droppedResource.amount}`);
@@ -526,6 +527,11 @@ export class ColonyManager extends Manager implements IColonyManager {
                     colRoomData.buildTasks.splice(
                         colRoomData.buildTasks.indexOf(buildTarget), 1);
                 }
+                break;
+            case 'pickup':
+                const pickupTarget = task.target as Resource;
+                colRoomData.resources.splice(colRoomData.resources.indexOf(pickupTarget), 1);
+                break;
         }
     }
 

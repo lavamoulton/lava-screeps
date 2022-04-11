@@ -10,13 +10,15 @@ interface IColony {
     name: string;
     room: Room;
     defcon: number;
+    baby: boolean;
+    parent: boolean;
     outposts: Room[];
     controller: StructureController;
     storage?: StructureStorage;
     creeps: Creep[];
     creepsByRole: { [roleName: string]: Creep[] };
     maxEnergy: number;
-    spawner: ISpawner;
+    spawner: ISpawner | null;
     towers?: StructureTower[];
     mines?: { [sourceID: Id<Source>]: IMine };
     outpostMines?: { [sourceID: Id<Source>]: IMine };
@@ -24,6 +26,7 @@ interface IColony {
     visualizer: IColonyVisualizer;
     taskData: roomTaskData;
     outpostTaskData: { [name: string]: roomTaskData };
+    colonyTaskData: colonyTaskData;
     init(): void;
     run(): void;
 }
@@ -42,4 +45,5 @@ type RoomMemoryData = {
     controller?: Id<StructureController>;
     sources: number;
     mineral?: Id<Mineral>;
+    time: number;
 }

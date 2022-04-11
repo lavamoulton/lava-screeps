@@ -18,6 +18,7 @@ export class RoomPlanner implements IRoomPlanner {
     run(): void {
         this._checkBuildings();
         this._checkMineRoads();
+        //this._clearRoads();
     }
 
     private _setBunkerLayout(): void {
@@ -116,7 +117,7 @@ export class RoomPlanner implements IRoomPlanner {
                               for (let x=0; x<50; x++) {
                                   for (let y=0; y<50; y++) {
                                       if (room.getTerrain().get(x, y) === TERRAIN_MASK_SWAMP || room.getTerrain().get(x, y) === 0) {
-                                          matrix.set(x, y, 3);
+                                            matrix.set(x, y, 3);
                                       }
                                   }
                               }
@@ -258,6 +259,59 @@ export class RoomPlanner implements IRoomPlanner {
                 }
             })
         }
+    }
+
+    private _clearRoads(): void {
+        let colMemory = this.colony.memory;
+        let roads: posTemplate[] = [];
+        if (this.colony.mines) {
+            _.forEach(this.colony.mines, (mine) => {
+                if (mine.output) {
+                    if (colMemory[`mineRoad${mine.source.id}`]) {
+                        roads = roads.concat(colMemory[`mineRoad${mine.source.id}`]);
+                    }
+                }
+            })
+        }
+        if (this.colony.outpostMines) {
+            _.forEach(this.colony.outpostMines, (mine) => {
+                if (mine.output) {
+                    if (!colMemory[`outpostMineRoad${mine.source.id}`]) {
+                        roads = roads.concat(colMemory[`outpostMineRoad${mine.source.id}`]);
+                    }
+                }
+            })
+        }
+        let buildTasks = _.filter(this.colony.taskData.buildTasks, (task) => {
+            return task.structureType === STRUCTURE_ROAD;
+        });
+        _.forEach(this.colony.outpostTaskData, (data) => {
+            let outpostBuildTasks = _.filter(data.buildTasks, (task) => {
+                return task.structureType === STRUCTURE_ROAD;
+            });
+            buildTasks = buildTasks.concat(outpostBuildTasks);
+        });
+        let result: ConstructionSite[] = [];
+        _.forEach(buildTasks, (task) => {
+            if (!task.room) {
+                return;
+            }
+            let temp: posTemplate = {
+                'x': task.pos.x,
+                'y': task.pos.y,
+                'room': task.room.name,
+            };
+            let check = roads.find((road) => {
+                return (temp.x === road.x && temp.y === road.y && temp.room === road.room);
+            });
+            if (!check) {
+                result.push(task);
+            }
+        });
+        _.forEach(result, (task) => {
+            console.log(`Removing road at ${task.pos.x} ${task.pos.y} ${task.pos.roomName}`);
+            task.remove();
+        })
     }
 
     private _getBuildingType(buildingName: string): BuildableStructureConstant | null {

@@ -19,6 +19,7 @@ declare global {
     colonies: any;
     empire: any;
     mapper: { [name: string]: RoomMemoryData };
+    map: { [name: string]: RoomMemoryData };
   }
 
   interface CreepMemory {
@@ -39,18 +40,9 @@ declare global {
 
   var empire: IEmpire;
   var Profiler: Profiler;
-  //var logger: LogManager;
 }
 
 global.Profiler = Profiler.init();
-/*global.logger = logging
-  .configure({
-    minLevels: {
-      '': 'info',
-    }
-  })
-  .registerConsoleLogger();*/
-
 global.empire = new Empire();
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change

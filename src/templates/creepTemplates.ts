@@ -19,8 +19,66 @@ const ROLE_TEMPLATES: { [name: string]: BodyPartConstant[] } = {
     'upgrader': [WORK, WORK, CARRY, MOVE],
 };
 
+const BABY_BODY_TEMPLATES: { [name: string]: roleTemplate } = {
+    'worker': {
+        'prefix': [WORK, WORK, CARRY, MOVE],
+        'body': [WORK, CARRY, MOVE, MOVE],
+        'suffix': [],
+    },
+    'support': {
+        'prefix': [WORK, WORK, CARRY, MOVE],
+        'body': [WORK, CARRY, MOVE, MOVE],
+        'suffix': [],
+    },
+    'miner': {
+        'prefix': [WORK, WORK, CARRY, MOVE],
+        'body': [WORK, MOVE],
+        'suffix': [MOVE, MOVE, MOVE, MOVE],
+    },
+    'builder': {
+        'prefix': [WORK, WORK, CARRY, MOVE],
+        'body': [WORK, CARRY, MOVE, MOVE],
+        'suffix': [],
+    },
+    'upgrader': {
+        'prefix': [WORK, WORK, CARRY, MOVE],
+        'body': [WORK, CARRY, MOVE, MOVE],
+        'suffix': [],
+    },
+    'scout': {
+        'prefix': [],
+        'body': [CLAIM, MOVE],
+        'suffix': [],
+    },
+    'hauler': {
+        'prefix': [WORK, CARRY, MOVE, MOVE],
+        'body': [CARRY, MOVE],
+        'suffix': [],
+    },
+    'melee': {
+        'prefix': [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, ATTACK, ATTACK, ATTACK, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
+        'body': [],
+        'suffix': [],
+    },
+    'attacker': {
+        'prefix': [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK, RANGED_ATTACK],
+        'body': [],
+        'suffix': [],
+    },
+    'defender': {
+        'prefix': [TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, TOUGH, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, ATTACK, ATTACK, ATTACK, ATTACK, ATTACK],
+        'body': [],
+        'suffix': [],
+    }
+}
+
 const ROLE_BODY_TEMPLATES: { [name: string]: roleTemplate} = {
     'worker': {
+        'prefix': [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
+        'body': [CARRY, MOVE],
+        'suffix': [],
+    },
+    'support': {
         'prefix': [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
         'body': [CARRY, MOVE],
         'suffix': [],
@@ -79,7 +137,23 @@ const TASK_PERMISSIONS: { [role: string]: { [task: string]: boolean } } = {
         'harvest': true,
         'upgrade': false,
         'supply': true,
-        'repair': true,
+        'repair': false,
+        'build': true,
+        'supplyTower': true,
+        'supplyStorage': false,
+    },
+    'support': {
+        'pickup': true,
+        'remotepickup': false,
+        'remotebuild': false,
+        'remoterepair': false,
+        'storage': true,
+        'mines': true,
+        'remoteMines': false,
+        'harvest': true,
+        'upgrade': false,
+        'supply': true,
+        'repair': false,
         'build': true,
         'supplyTower': true,
         'supplyStorage': false,
@@ -277,6 +351,7 @@ const TASK_PRIORITIES: { [name: string]: { [priority: number]: string } } = {
 export const creepTemplates = {
     CREEP_PRIORITIES,
     ROLE_TEMPLATES,
+    BABY_BODY_TEMPLATES,
     ROLE_BODY_TEMPLATES,
     TASK_PRIORITIES,
     TASK_PERMISSIONS,

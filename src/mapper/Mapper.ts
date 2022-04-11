@@ -3,6 +3,7 @@ import { Traveler } from "../utils/Traveler";
 import { taskUtils } from "../tasks/taskUtils";
 import { TaskClaim } from "tasks/Claim";
 import { TaskReserve } from "tasks/Reserve";
+import { time } from "console";
 
 @profile
 export class Mapper {
@@ -69,6 +70,62 @@ export class Mapper {
         }
     }
 
+    _scoutRoom(room: Room): void {
+        const roomData = this._recordRoomData(room);
+        Memory.mapper[room.name] = roomData;
+    }
+
+    _recordRoomData(room: Room): RoomMemoryData {
+        let owner;
+        if (room.controller) {
+            owner = room.controller.owner?.username;
+        }
+        let outpost = false;
+        let range = 10000;
+        let colonyResult: IColony;
+        const scoutRoomPosition = new RoomPosition(25, 25, room.name);
+        _.forEach(global.empire.colonies, (colony) => {
+            const colonyPosition = new RoomPosition(colony.controller.pos.x, colony.controller.pos.y, colony.name);
+            let temp = Traveler.findTravelPath(colonyPosition, scoutRoomPosition).cost;
+            if (temp < range) {
+                range = temp;
+                colonyResult = colony;
+            }
+        });
+        const threatLevel = room.find(FIND_HOSTILE_CREEPS).length + room.find(FIND_HOSTILE_STRUCTURES).length;
+        const controller = room.controller?.id;
+        const numSources = room.find(FIND_SOURCES).length;
+        const minerals = room.find(FIND_MINERALS);
+        let containers = room.find(FIND_STRUCTURES, { filter: (s) =>
+            s.structureType === STRUCTURE_CONTAINER
+        });
+        if (containers) {
+            if (containers.length > 0 && range < 300) {
+                let colony = global.empire.colonies[room.name];
+                if (!colony) {
+                    outpost = true;
+                }
+            }
+        }
+        let roomMineral;
+        if (minerals.length > 0) {
+            roomMineral = minerals[0].id;
+        }
+        let time = Game.time;
+        return {
+            name: room.name,
+            owner: owner,
+            colony: colonyResult!.name,
+            outpost: outpost,
+            range: range,
+            threatLevel: threatLevel,
+            controller: controller,
+            sources: numSources,
+            mineral: roomMineral,
+            time: time,
+        }
+    }
+
     recordRoomData(room: Room, creep: Creep): RoomMemoryData | undefined {
         let colony = global.empire.colonies[creep.memory.colonyName];
         let owner;
@@ -87,6 +144,7 @@ export class Mapper {
         if (minerals.length > 0) {
             roomMineral = minerals[0].id;
         }
+        let time = Game.time;
         if (room) {
             return {
                 name: room.name,
@@ -98,6 +156,7 @@ export class Mapper {
                 controller: controller,
                 sources: numSources,
                 mineral: roomMineral,
+                time: time,
             }
         }
         return undefined;
@@ -112,6 +171,12 @@ export class Mapper {
     }
 
     run(): void {
+        if (Game.time % 10 === 0) {
+            for (let i in Game.rooms) {
+                let room = Game.rooms[i];
+                this._scoutRoom(room);
+            }
+        }
         if (this._scouts.length < 1) {
             return;
         }
@@ -128,25 +193,12 @@ export class Mapper {
             if (scout.memory.task === 'none') {
                 const colony = global.empire.colonies[scout.memory.colonyName];
                 console.log(scout.memory.colonyName);
-                if (colony) {
-                    for (let i in colony.outposts) {
-                        let outpost = colony.outposts[i];
-                        if (outpost.controller) {
-                            if (outpost.controller.reservation) {
-                                if (outpost.controller.reservation.ticksToEnd < 3000) {
-                                    const task = new TaskReserve(outpost.controller, scout);
-                                    scout.memory.task = taskUtils.taskToString(task, outpost.controller.id);
-                                    //const task = new TaskClaim(outpost.controller, scout);
-                                    //scout.memory.task = taskUtils.taskToString(task, outpost.controller.id);
-                                    break;
-                                }
-                            } else {
-                                const task = new TaskReserve(outpost.controller, scout);
-                                scout.memory.task = taskUtils.taskToString(task, outpost.controller.id);
-                                break;
-                            }
-                        }
-                    }
+                const cTaskData = colony.colonyTaskData;
+                if (cTaskData.reservations.length > 0) {
+                    let controller = cTaskData.reservations[0];
+                    const task = new TaskReserve(controller, scout);
+                    scout.memory.task = taskUtils.taskToString(task, controller.id);
+                    cTaskData.reservations.splice(0, 1);
                 }
                 /*
                 const roomName = this._getScoutTarget(scout, scout.room.name);
@@ -170,7 +222,7 @@ export class Mapper {
                 task.step();
                 continue;
             }
-            /*if (scout.memory.task.startsWith('claim')) {
+            if (scout.memory.task.startsWith('claim')) {
                 const taskTemplate = taskUtils.taskStringToTemplate(scout.memory.task);
                 const task = taskUtils.createTask(taskTemplate);
                 if (!task) {
@@ -182,7 +234,8 @@ export class Mapper {
                     continue;
                 }
                 task.step();
-            }*/
+                continue;
+            }
             if (scout.memory.task.startsWith('explore')) {
                 scout.memory.task = 'none';
                 continue;
