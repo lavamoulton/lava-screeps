@@ -46,7 +46,7 @@ export class Empire implements IEmpire {
             let colony = this.colonies[colName];
             let colCreeps: Creep[] = creepsByColony[colName];
             colony.creeps = colCreeps;
-            if (colony.creeps.length < 1) {
+            if (!colony.creeps) {
                 continue;
             }
             colony.creepsByRole = _.groupBy(colCreeps, creep => creep.memory.role) as { [roleName: string]: Creep[] };

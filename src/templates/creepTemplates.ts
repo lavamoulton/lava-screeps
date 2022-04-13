@@ -2,6 +2,7 @@ import { workers } from "cluster";
 
 const CREEP_PRIORITIES: { [name: string]: number } = {
     'miner': 2,
+    'supplier': 3,
     'hauler': 4,
     'worker': 5,
     'upgrader': 6,
@@ -23,6 +24,11 @@ const BABY_BODY_TEMPLATES: { [name: string]: roleTemplate } = {
     'worker': {
         'prefix': [WORK, WORK, CARRY, MOVE],
         'body': [WORK, CARRY, MOVE, MOVE],
+        'suffix': [],
+    },
+    'supplier': {
+        'prefix': [WORK, CARRY, MOVE, MOVE],
+        'body': [CARRY, MOVE],
         'suffix': [],
     },
     'support': {
@@ -75,6 +81,11 @@ const BABY_BODY_TEMPLATES: { [name: string]: roleTemplate } = {
 const ROLE_BODY_TEMPLATES: { [name: string]: roleTemplate} = {
     'worker': {
         'prefix': [WORK, WORK, WORK, WORK, WORK, CARRY, CARRY, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE, MOVE],
+        'body': [CARRY, MOVE],
+        'suffix': [],
+    },
+    'supplier': {
+        'prefix': [WORK, CARRY, MOVE, MOVE],
         'body': [CARRY, MOVE],
         'suffix': [],
     },
@@ -142,6 +153,22 @@ const TASK_PERMISSIONS: { [role: string]: { [task: string]: boolean } } = {
         'supplyTower': true,
         'supplyStorage': false,
     },
+    'supplier': {
+        'pickup': true,
+        'remotepickup': false,
+        'remotebuild': false,
+        'remoterepair': false,
+        'storage': true,
+        'mines': true,
+        'remoteMines': false,
+        'harvest': true,
+        'upgrade': false,
+        'supply': true,
+        'repair': false,
+        'build': false,
+        'supplyTower': true,
+        'supplyStorage': false,
+    },
     'support': {
         'pickup': true,
         'remotepickup': false,
@@ -182,7 +209,7 @@ const TASK_PERMISSIONS: { [role: string]: { [task: string]: boolean } } = {
         'storage': false,
         'mines': true,
         'remoteMines': false,
-        'harvest': false,
+        'harvest': true,
         'upgrade': false,
         'supply': false,
         'repair': true,
@@ -191,14 +218,14 @@ const TASK_PERMISSIONS: { [role: string]: { [task: string]: boolean } } = {
         'supplyStorage': false,
     },
     'upgrader': {
-        'pickup': false,
+        'pickup': true,
         'remotepickup': false,
         'remotebuild': false,
         'remoterepair': false,
         'storage': true,
         'mines': true,
         'remoteMines': false,
-        'harvest': false,
+        'harvest': true,
         'upgrade': true,
         'supply': false,
         'repair': false,

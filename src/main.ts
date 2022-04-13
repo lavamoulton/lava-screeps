@@ -50,6 +50,7 @@ global.empire = new Empire();
 export const loop = ErrorMapper.wrapLoop(() => {
   //const logger = global.logger.getLogger('main');
   //logger.info(`Current game tick is ${Game.time}`);
+  console.log(`---------- Current game tick is ${Game.time} ----------`);
 
   let empire = global.empire;
 
@@ -79,6 +80,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
   }
 
   if (Game.cpu.bucket > 9999) {
-    Game.cpu.generatePixel();
+    console.log(`CPU bucket is full, generating new pixel`);
+    //Game.cpu.generatePixel();
   }
 });

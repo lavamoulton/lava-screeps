@@ -69,9 +69,20 @@ export class SpawnerManager extends Manager {
     }
 
     private _queueCreeps(): void {
-        if (this.colony.creepsByRole['worker'].length < 3) {
-            const workerTemplate = this._getCreepTemplate('worker');
-            this.colony.spawner?.queueCreep(workerTemplate, 1);
+        if (this.colony.controller.level > 1) {
+            if (this.colony.creepsByRole['supplier'].length < 2) {
+                const supplierTemplate = this._getCreepTemplate('supplier');
+                this.colony.spawner?.queueCreep(supplierTemplate, 1);
+            }
+            if (this.colony.creepsByRole['worker'].length < 1) {
+                const workerTemplate = this._getCreepTemplate('worker');
+                this.colony.spawner?.queueCreep(workerTemplate, 2);
+            }
+        } else {
+            if (this.colony.creepsByRole['worker'].length < 3) {
+                const workerTemplate = this._getCreepTemplate('worker');
+                this.colony.spawner?.queueCreep(workerTemplate, 1);
+            }
         }
         if (this.colony.mines) {
             let numMines = Object.keys(this.colony.mines).length;
@@ -80,13 +91,13 @@ export class SpawnerManager extends Manager {
                 console.log(`Attempting to spawn miner`);
                 this.colony.spawner?.queueCreep(minerTemplate, 2);
             }
-            if (this.colony.storage) {
+            if (this.colony.storage && this.colony.controller.level > 1) {
                 if (this.colony.creepsByRole['hauler'].length < numMines) {
                     const haulerTemplate = this._getCreepTemplate('hauler');
                     this.colony.spawner?.queueCreep(haulerTemplate, 5);
                 }
             }
-            if (this.colony.outpostMines) {
+            if (this.colony.outpostMines && this.colony.controller.level > 1) {
                 let numOutpostMines = Object.keys(this.colony.outpostMines).length;
                 if (this.colony.creepsByRole['miner'].length < numMines + numOutpostMines) {
                     const minerTemplate = this._getCreepTemplate('miner');
@@ -112,9 +123,12 @@ export class SpawnerManager extends Manager {
             const upgraderTemplate = this._getCreepTemplate('upgrader');
             this.colony.spawner?.queueCreep(upgraderTemplate, 3);
         }
-        if (this.colony.creepsByRole['miner'].length < 7) {
+        /*if (this.colony.creepsByRole['miner'].length < 7) {
             const minerTemplate = this._getCreepTemplate('miner');
             this.colony.spawner?.queueCreep(minerTemplate, 6);
+        }*/
+        if (this.colony.controller.level < 3) {
+            return;
         }
         if (this.colony.creepsByRole['scout'].length < 2) {
             const scoutTemplate = this._getCreepTemplate('scout');

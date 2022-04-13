@@ -232,7 +232,8 @@ export class RoomPlanner implements IRoomPlanner {
                         const mappedPos = _.map(positions, pos => new RoomPosition(pos.x, pos.y, pos.room));
                         mappedPos.forEach((pos => {
                             let room = Game.rooms[pos.roomName];
-                            room.createConstructionSite(pos.x, pos.y, STRUCTURE_ROAD);
+                            new RoomVisual(room.name).circle(pos.x, pos.y, { radius: .45, fill: "transparent", stroke: "red", strokeWidth: .15, opacity: 1});
+                            //room.createConstructionSite(pos.x, pos.y, STRUCTURE_ROAD);
                         }));
                     }
                     colMemory[`mineRoad${mine.source.id}`] = this._getMineRoad(mine);
@@ -251,7 +252,7 @@ export class RoomPlanner implements IRoomPlanner {
                             let room = Game.rooms[pos.roomName];
                             if (room) {
                                 new RoomVisual(room.name).circle(pos.x, pos.y, { radius: .45, fill: "transparent", stroke: "red", strokeWidth: .15, opacity: 1});
-                                room.createConstructionSite(pos.x, pos.y, STRUCTURE_ROAD);
+                                //room.createConstructionSite(pos.x, pos.y, STRUCTURE_ROAD);
                             }
                         }));
                     }

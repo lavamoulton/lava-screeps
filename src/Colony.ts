@@ -269,8 +269,9 @@ export class Colony implements IColony {
             });
         }
         this._checkEnemyRooms();
-        if (Game.cpu.getUsed() < 10) {
+        /*if (Game.cpu.getUsed() < 10) {
             this.visualizer?.run();
-        }
+        }*/
+        this.visualizer?.run();
     }
 }

@@ -39,7 +39,7 @@ export class ColonyManager extends Manager implements IColonyManager {
         this._initCreeps();
         if (Game.time % 60 === 0) {
             this.roomPlanner = new RoomPlanner(this.colony);
-            //this.roomPlanner.init();
+            this.roomPlanner.init();
         }
     }
 
@@ -48,7 +48,7 @@ export class ColonyManager extends Manager implements IColonyManager {
         this._runCreeps();
         this._runTowers();
         if (Game.time % 60 === 0) {
-            //this.roomPlanner?.run();
+            this.roomPlanner?.run();
         }
     }
 
@@ -137,13 +137,13 @@ export class ColonyManager extends Manager implements IColonyManager {
     private _runCreeps(): void {
         for (let i in this._workCreeps) {
             let creep = this._workCreeps[i];
-            console.log(`${creep.name} (working): ${creep.memory.task}`);
+            //console.log(`${creep.name} (working): ${creep.memory.task}`);
             this._runWorkingCreep(creep);
         }
 
         for (let i in this._idleCreeps) {
             let creep = this._idleCreeps[i];
-            console.log(`${creep.name} (idle): Setting task`);
+            //console.log(`${creep.name} (idle): Setting task`);
             this._runIdleCreep(creep);
         }
     }
@@ -211,7 +211,7 @@ export class ColonyManager extends Manager implements IColonyManager {
             const outpostLength = Object.keys(outpostData).length;
             const permissions = this._taskPermissions[creep.memory.role];
             if (!permissions) {
-                console.log(`Error loading permissiosn for idle creep ${creep.name}`);
+                console.log(`Error loading permissions for idle creep ${creep.name}`);
                 return;
             }
             if (creep.store.getUsedCapacity(RESOURCE_ENERGY) === 0) {
@@ -219,7 +219,7 @@ export class ColonyManager extends Manager implements IColonyManager {
                     if (this.colony.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 1000) {
                         const task = new TaskWithdraw(this.colony.storage, creep);
                         creep.memory.task = taskUtils.taskToString(task, this.colony.storage.id);
-                        console.log(`Getting storage withdrawl task`);
+                        //console.log(`Getting storage withdrawal task`);
                         return task;
                     }
                 }
@@ -242,7 +242,7 @@ export class ColonyManager extends Manager implements IColonyManager {
                             if (openOutpostMineOutputs.length > 0) {
                                 const task = new TaskWithdraw(openOutpostMineOutputs[0].output!, creep);
                                 creep.memory.task = taskUtils.taskToString(task, openOutpostMineOutputs[0].output!.id);
-                                console.log(`Withdrawing from remote mine output task`);
+                                //console.log(`Withdrawing from remote mine output task`);
                                 return task;
                             }
                         }
@@ -253,9 +253,10 @@ export class ColonyManager extends Manager implements IColonyManager {
                     if (droppedResource.amount > creep.store.getFreeCapacity(RESOURCE_ENERGY)) {
                         const task = new TaskPickup(droppedResource, creep);
                         creep.memory.task = taskUtils.taskToString(task, droppedResource.id);
-                        console.log(`Picking up dropped resource, lowering dropped resource amount ${droppedResource.amount}`);
+                        data.resources.splice(data.resources.indexOf(droppedResource), 1);
+                        //console.log(`Picking up dropped resource, lowering dropped resource amount ${droppedResource.amount}`);
                         //droppedResource.amount -= creep.store.getFreeCapacity(RESOURCE_ENERGY);
-                        console.log(`New dropped resource amount ${droppedResource.amount}`);
+                        //console.log(`New dropped resource amount ${droppedResource.amount}`);
                         return task;
                     }
                 }
@@ -265,7 +266,7 @@ export class ColonyManager extends Manager implements IColonyManager {
                     if (openMineOutputs.length > 0) {
                         const task = new TaskWithdraw(openMineOutputs[0].output!, creep);
                         creep.memory.task = taskUtils.taskToString(task, openMineOutputs[0].output!.id);
-                        console.log(`Withdrawing from local mine output task`);
+                        //console.log(`Withdrawing from local mine output task`);
                         return task;
                     }
                 }
@@ -278,9 +279,9 @@ export class ColonyManager extends Manager implements IColonyManager {
                                 const task = new TaskPickup(droppedResource, creep);
                                 creep.memory.task = taskUtils.taskToString(task, droppedResource.id);
                                 roomData.resources.splice(roomData.resources.indexOf(droppedResource), 1);
-                                console.log(`Picking up dropped resource, lowering dropped resource amount ${droppedResource.amount}`);
+                                //console.log(`Picking up dropped resource, lowering dropped resource amount ${droppedResource.amount}`);
                                 //droppedResource.amount -= creep.store.getFreeCapacity(RESOURCE_ENERGY);
-                                console.log(`New dropped resource amount ${droppedResource.amount}`);
+                                //console.log(`New dropped resource amount ${droppedResource.amount}`);
                                 return task;
                             }
                         }
@@ -292,9 +293,9 @@ export class ColonyManager extends Manager implements IColonyManager {
                             if (droppedResource.amount > creep.store.getFreeCapacity(RESOURCE_ENERGY)) {
                                 const task = new TaskPickup(droppedResource, creep);
                                 creep.memory.task = taskUtils.taskToString(task, droppedResource.id);
-                                console.log(`Picking up dropped resource, lowering dropped resource amount ${droppedResource.amount}`);
+                                //console.log(`Picking up dropped resource, lowering dropped resource amount ${droppedResource.amount}`);
                                 //droppedResource.amount -= creep.store.getFreeCapacity(RESOURCE_ENERGY);
-                                console.log(`New dropped resource amount ${droppedResource.amount}`);
+                                //console.log(`New dropped resource amount ${droppedResource.amount}`);
                                 return task;
                             }
                         }
@@ -307,15 +308,15 @@ export class ColonyManager extends Manager implements IColonyManager {
                     if (openOutpostMineOutputs.length > 0) {
                         const task = new TaskWithdraw(openOutpostMineOutputs[0].output!, creep);
                         creep.memory.task = taskUtils.taskToString(task, openOutpostMineOutputs[0].output!.id);
-                        console.log(`Withdrawing from remote mine output task`);
+                        //console.log(`Withdrawing from remote mine output task`);
                         return task;
                     }
                 }
                 if (permissions.harvest) {
-                    const source = this.colony.room.find(FIND_SOURCES)[0];
+                    const source = this.colony.room.find(FIND_SOURCES)[1];
                     const task = new TaskHarvest(source, creep);
                     creep.memory.task = taskUtils.taskToString(task, source.id);
-                    console.log(`Harvesting resource task`);
+                    //console.log(`Harvesting resource task`);
                     return task;
                 }
                 Traveler.travelTo(creep, new RoomPosition(42, 40, this.colony.room.name));
@@ -327,14 +328,14 @@ export class ColonyManager extends Manager implements IColonyManager {
                 //const task = new TaskSupply(data.supplyTasks[0], creep);
                 creep.memory.task = taskUtils.taskToString(task, data.supplyTasks[0].id);
                 this._checkTaskData(task, creep);
-                console.log(`Getting supply task for ${task.target}`);
+                //console.log(`Getting supply task for ${task.target}`);
                 return task;
             }
             if (permissions.supplyTower && data.towerSupplyTasks.length > 0) {
                 const task = new TaskSupply(data.towerSupplyTasks[0], creep);
                 creep.memory.task = taskUtils.taskToString(task, data.towerSupplyTasks[0].id);
                 this._checkTaskData(task, creep);
-                console.log(`Getting supply tower task for ${task.target}`);
+                //console.log(`Getting supply tower task for ${task.target}`);
                 return task;
             }
             if (permissions.repair && permissions.remoteRepair) {
@@ -360,14 +361,14 @@ export class ColonyManager extends Manager implements IColonyManager {
                 const task = new TaskRepair(data.repairTasks[0], creep);
                 creep.memory.task = taskUtils.taskToString(task, data.repairTasks[0].id);
                 this._checkTaskData(task, creep);
-                console.log(`Getting repair task for ${task.target}`);
+                //console.log(`Getting repair task for ${task.target}`);
                 return task;
             }
             if (permissions.build && data.buildTasks.length > 0) {
                 const task = new TaskBuild(data.buildTasks[0], creep);
                 creep.memory.task = taskUtils.taskToString(task, data.buildTasks[0].id);
                 this._checkTaskData(task, creep);
-                console.log(`Getting build task for ${task.target}`);
+                //console.log(`Getting build task for ${task.target}`);
                 return task;
             }
             if (permissions.remoterepair && outpostLength > 0) {
@@ -414,7 +415,7 @@ export class ColonyManager extends Manager implements IColonyManager {
                 if (this.colony.storage.store.getUsedCapacity(RESOURCE_ENERGY) < 750000) {
                     const task = new TaskSupply(this.colony.storage, creep);
                     creep.memory.task = taskUtils.taskToString(task, this.colony.storage.id);
-                    console.log(`Supplying storage ${task.target}`);
+                    //console.log(`Supplying storage ${task.target}`);
                     return task;
                 }
             }
@@ -422,7 +423,7 @@ export class ColonyManager extends Manager implements IColonyManager {
                 const task = new TaskRepair(data.rampartTasks[0], creep);
                 creep.memory.task = taskUtils.taskToString(task, data.rampartTasks[0].id);
                 this._checkTaskData(task, creep);
-                console.log(`Getting rampart repair task for ${task.target}`);
+                //console.log(`Getting rampart repair task for ${task.target}`);
                 return task;
             }
             if (permissions.remoterepair && outpostLength > 0) {
@@ -439,7 +440,7 @@ export class ColonyManager extends Manager implements IColonyManager {
             if (permissions.upgrade) {
                 const task = new TaskUpgrade(this.colony.controller, creep);
                 creep.memory.task = taskUtils.taskToString(task, this.colony.controller.id);
-                console.log(`Getting upgrade task for ${task.target}`);
+                //console.log(`Getting upgrade task for ${task.target}`);
                 return task;
             }
 
@@ -452,8 +453,12 @@ export class ColonyManager extends Manager implements IColonyManager {
                     return supplyStorage;
                 }
             }
-            Traveler.travelTo(creep, new RoomPosition(42, 40, this.colony.room.name));
-            return;
+            const task = new TaskUpgrade(this.colony.controller, creep);
+            creep.memory.task = taskUtils.taskToString(task, this.colony.controller.id);
+            //console.log(`Getting upgrade task for ${task.target}`);
+            return task;
+            //Traveler.travelTo(creep, new RoomPosition(42, 40, this.colony.room.name));
+            //return;
         }
     }
 

@@ -19,7 +19,7 @@ export class TaskSupply extends Task {
             return false;
         }
         const target = this.target as StructureSpawn | StructureExtension | StructureTower | StructureStorage;
-        console.log(`Target: ${target}, ${target.id}`);
+        //console.log(`Target: ${target}, ${target.id}`);
         if (typeof target === typeof StructureTower) {
             return target.store.getFreeCapacity(RESOURCE_ENERGY) > 50;
         }

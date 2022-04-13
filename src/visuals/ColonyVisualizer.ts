@@ -24,7 +24,8 @@ export class ColonyVisualizer implements IColonyVisualizer {
 
     run(): void {
         let table = this._createTable();
-        this._drawTable(table);
+        //this._drawTable(table);
+        this._visualizeColony();
     }
 
     private _createTable(): visualTable {

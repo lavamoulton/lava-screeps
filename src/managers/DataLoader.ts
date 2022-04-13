@@ -103,7 +103,7 @@ export class DataLoader extends Manager implements DataLoader {
             (s.structureType === STRUCTURE_RAMPART || s.structureType === STRUCTURE_WALL)
         });
         let rampartTasks = _.filter(ramparts, (rampart) => {
-            return rampart.hits < 200000;
+            return rampart.hits < 250000;
         });
         /*
         if (rampartTasks.length < 1) {
